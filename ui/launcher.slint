@@ -225,7 +225,7 @@ component DateRow inherits Rectangle {
         VerticalLayout {
             alignment: center;
             box := InputBox {
-                width: 214px;
+                width: 250px;
                 text <=> root.text;
                 placeholder: root.placeholder;
                 active: root.active;
@@ -1024,6 +1024,7 @@ export component AppWindow inherits Window {
                                 edited => { root.editor-edited(); }
                             }
                             if root.view == View.editor && root.edit-title == "" : Text {
+                                x: 0;
                                 height: parent.height;
                                 vertical-alignment: center;
                                 text: @tr("Title");
@@ -1031,6 +1032,7 @@ export component AppWindow inherits Window {
                                 color: Theme.text-3;
                             }
                             if root.view == View.help : Text {
+                                x: 0;
                                 height: parent.height;
                                 vertical-alignment: center;
                                 text: @tr("Keyboard shortcuts");

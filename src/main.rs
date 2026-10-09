@@ -19,13 +19,14 @@ use std::time::Duration;
 slint::include_modules!();
 
 const USAGE: &str = "\
-Wisp — catch ideas, memos and to-dos.
+Wisp: catch ideas, memos and to-dos.
 
-Usage: wisp [--hidden | --toggle | --quit]
+Usage: wisp [--hidden | --toggle | --settings | --quit]
 
   (no option)  open Wisp, starting it if needed
   --hidden     start in the tray without opening the window
   --toggle     open or hide Wisp (bind this to a key on Wayland desktops)
+  --settings   open the settings window
   --quit       quit the running Wisp
 ";
 
@@ -40,6 +41,8 @@ fn main() {
         "quit"
     } else if has("--toggle") {
         "toggle"
+    } else if has("--settings") {
+        "settings"
     } else if has("--hidden") {
         "none"
     } else {
@@ -56,6 +59,7 @@ fn main() {
         eprintln!("wisp: {err}");
     }
 
+    // The launcher must be created first: the window hook styles the first window.
     let ui = match AppWindow::new() {
         Ok(ui) => ui,
         Err(err) => {
@@ -63,11 +67,20 @@ fn main() {
             std::process::exit(1);
         }
     };
+    let settings = match SettingsWindow::new() {
+        Ok(settings) => settings,
+        Err(err) => {
+            eprintln!("wisp: couldn't create the settings window: {err}");
+            std::process::exit(1);
+        }
+    };
     let icon = icon::app_icon(64);
     ui.set_app_icon(icon.clone());
+    settings.set_app_icon(icon.clone());
 
-    app::install(app::App::new(&ui, data_dir, portable));
-    wire_window(&ui);
+    app::install(app::App::new(&ui, settings.clone_strong(), data_dir, portable));
+    wire_launcher(&ui);
+    wire_settings(&settings);
 
     let tray = Tray::new().ok();
     if let Some(tray) = &tray {
@@ -76,7 +89,7 @@ fn main() {
             with_app(|app| app.summon());
         });
         tray.on_open_settings(|| {
-            with_app(|app| app.open_settings_from_tray());
+            with_app(|app| app.open_settings());
         });
         tray.on_quit_app(|| {
             with_app(|app| app.quit());
@@ -111,8 +124,8 @@ fn main() {
     });
 
     if command != "none" {
-        slint::Timer::single_shot(Duration::ZERO, || {
-            with_app(|app| app.summon());
+        slint::Timer::single_shot(Duration::ZERO, move || {
+            with_app(|app| app.remote(command));
         });
     }
 
@@ -121,7 +134,7 @@ fn main() {
     }
 }
 
-fn wire_window(ui: &AppWindow) {
+fn wire_launcher(ui: &AppWindow) {
     ui.on_key(|text, ctrl, alt, shift, meta, context| {
         with_app(|app| app.on_key(&text, ctrl, alt, shift, meta, &context)).unwrap_or(false)
     });
@@ -137,11 +150,18 @@ fn wire_window(ui: &AppWindow) {
     ui.on_row_toggled(|i| {
         with_app(|app| app.row_toggled(i));
     });
-    ui.on_badge_clicked(|| {
-        with_app(|app| app.badge_clicked());
+    ui.on_tab_clicked(|i| {
+        with_app(|app| app.tab_clicked(i));
+    });
+    ui.on_settings_clicked(|| {
+        // After the click is handled, so the launcher can hide cleanly.
+        app::later(|app| app.open_settings());
+    });
+    ui.on_back_clicked(|| {
+        with_app(|app| app.back_clicked());
     });
     ui.on_editor_edited(|| {
-        with_app(|app| app.update_editor());
+        with_app(|app| app.editor_edited());
     });
     ui.on_reminder_cycle(|i, delta| {
         with_app(|app| app.reminder_cycle(i, delta));
@@ -151,9 +171,6 @@ fn wire_window(ui: &AppWindow) {
     });
     ui.on_reminder_add(|| {
         with_app(|app| app.add_reminder());
-    });
-    ui.on_setting_clicked(|i| {
-        with_app(|app| app.setting_clicked(i));
     });
 
     // Closing (Alt+F4, ⌘W) hides to the tray instead of quitting.
@@ -175,14 +192,38 @@ fn wire_window(ui: &AppWindow) {
     });
 }
 
-/// Launcher-style window tweaks: no taskbar button on Windows, no Dock icon on macOS.
+fn wire_settings(settings: &SettingsWindow) {
+    settings.on_key(|text, ctrl, alt, shift, meta| with_app(|app| app.settings_key(&text, ctrl, alt, shift, meta)).unwrap_or(false));
+    settings.on_page_clicked(|i| {
+        with_app(|app| app.page_clicked(i));
+    });
+    settings.on_card_clicked(|i| {
+        with_app(|app| app.card_clicked(i));
+    });
+    settings.on_theme_clicked(|mode| {
+        with_app(|app| app.theme_clicked(mode));
+    });
+    settings.window().on_close_requested(|| {
+        app::later(|app| app.settings_closed());
+        slint::CloseRequestResponse::HideWindow
+    });
+}
+
+/// Launcher-style tweaks for the first window (the launcher): on Windows no
+/// taskbar button, a drop shadow and rounded corners; on macOS no Dock icon.
 fn select_backend() -> Result<(), slint::PlatformError> {
     let selector = slint::BackendSelector::new();
     #[cfg(windows)]
-    let selector = selector.with_winit_window_attributes_hook(|attributes| {
-        use winit::platform::windows::WindowAttributesExtWindows;
-        attributes.with_skip_taskbar(true)
-    });
+    let selector = {
+        let launcher_done = std::cell::Cell::new(false);
+        selector.with_winit_window_attributes_hook(move |attributes| {
+            use winit::platform::windows::{CornerPreference, WindowAttributesExtWindows};
+            if launcher_done.replace(true) {
+                return attributes; // the settings window keeps the standard frame
+            }
+            attributes.with_skip_taskbar(true).with_undecorated_shadow(true).with_corner_preference(CornerPreference::Round)
+        })
+    };
     #[cfg(target_os = "macos")]
     let selector = {
         use winit::platform::macos::{ActivationPolicy, EventLoopBuilderExtMacOS};

@@ -1,0 +1,486 @@
+// The settings window, after Flow Launcher's: pages in a sidebar, and each
+// setting a card with an icon, a title, a line of explanation and its control.
+
+import { Theme, Glyph, Icon } from "theme.slint";
+import { Keycap, KeyCombo, KeyHintView, Card, Switch, PushButton } from "widgets.slint";
+import { NavItem, SettingCard, KeyHint } from "types.slint";
+
+component NavButton inherits Rectangle {
+    in property <Glyph> glyph;
+    in property <string> label;
+    in property <bool> selected;
+    in property <bool> keyboard;
+    callback clicked();
+    height: 40px;
+    border-radius: 6px;
+    background: root.selected ? Theme.selected : touch.has-hover ? Theme.hover : transparent;
+    border-width: root.keyboard ? 2px : 0px;
+    border-color: Theme.accent;
+    Rectangle {
+        x: 0;
+        width: 3px;
+        height: root.selected ? 18px : 0px;
+        y: (parent.height - self.height) / 2;
+        animate height { duration: 140ms; easing: ease-out; }
+        border-radius: 1.5px;
+        background: Theme.accent;
+    }
+    HorizontalLayout {
+        padding-left: 14px;
+        spacing: 12px;
+        VerticalLayout {
+            alignment: center;
+            Icon {
+                glyph: root.glyph;
+                icon-size: 18px;
+                tint: root.selected ? Theme.accent : Theme.text-2;
+            }
+        }
+        Text {
+            text: root.label;
+            font-size: 13.5px;
+            font-weight: root.selected ? 600 : 400;
+            color: Theme.text;
+            vertical-alignment: center;
+        }
+    }
+    touch := TouchArea {
+        clicked => { root.clicked(); }
+    }
+}
+
+// A thumbnail of the launcher in fixed light or dark colours.
+component MiniLauncher inherits Rectangle {
+    in property <bool> dark;
+    background: root.dark ? #1f2023 : #f9f9fb;
+    Rectangle {
+        x: 10px;
+        y: 9px;
+        width: 15px;
+        height: 15px;
+        border-radius: 4px;
+        background: root.dark ? #7aa2ff40 : #2b57d826;
+    }
+    Rectangle {
+        x: 32px;
+        y: 14px;
+        width: parent.width - 64px;
+        height: 5px;
+        border-radius: 2.5px;
+        background: root.dark ? #c3c6cc : #575c66;
+    }
+    Rectangle {
+        y: 33px;
+        height: 1px;
+        background: root.dark ? #36373c : #e3e5ea;
+    }
+    for i in 3 : Rectangle {
+        x: 6px;
+        y: 40px + i * 22px;
+        width: parent.width - 12px;
+        height: 19px;
+        border-radius: 4px;
+        background: i == 0 ? (root.dark ? #7aa2ff24 : #2b57d815) : transparent;
+        Rectangle {
+            x: 5px;
+            y: 3px;
+            width: 13px;
+            height: 13px;
+            border-radius: 3.5px;
+            background: i == 0 ? (root.dark ? #7aa2ff40 : #2b57d826) : (root.dark ? #ffffff14 : #0000000d);
+        }
+        Rectangle {
+            x: 24px;
+            y: 5px;
+            width: parent.width - 54px - i * 14px;
+            height: 4px;
+            border-radius: 2px;
+            background: root.dark ? #c3c6cc : #575c66;
+        }
+        Rectangle {
+            x: 24px;
+            y: 12px;
+            width: parent.width * 0.45;
+            height: 3px;
+            border-radius: 1.5px;
+            background: root.dark ? #8d9199 : #b6bac2;
+        }
+    }
+}
+
+component ThemeTile inherits Rectangle {
+    in property <int> mode; // 0 system, 1 light, 2 dark
+    in property <bool> chosen;
+    callback clicked();
+    VerticalLayout {
+        spacing: 10px;
+        Rectangle {
+            height: 112px;
+            border-radius: 8px;
+            clip: true;
+            MiniLauncher {
+                dark: root.mode == 2;
+            }
+            // "Match system" shows both halves.
+            if root.mode == 0 : Rectangle {
+                x: parent.width / 2;
+                width: parent.width / 2;
+                clip: true;
+                MiniLauncher {
+                    x: -parent.x;
+                    width: root.width;
+                    dark: true;
+                }
+            }
+            Rectangle {
+                border-radius: 8px;
+                border-width: root.chosen ? 2px : 1px;
+                border-color: root.chosen ? Theme.accent : Theme.stroke-strong;
+            }
+        }
+        HorizontalLayout {
+            alignment: center;
+            spacing: 8px;
+            VerticalLayout {
+                alignment: center;
+                Rectangle {
+                    width: 16px;
+                    height: 16px;
+                    border-radius: 8px;
+                    border-width: root.chosen ? 0px : 1px;
+                    border-color: Theme.text-2;
+                    background: root.chosen ? Theme.accent : transparent;
+                    Rectangle {
+                        width: 6px;
+                        height: 6px;
+                        border-radius: 3px;
+                        background: root.chosen ? Theme.on-accent : transparent;
+                    }
+                }
+            }
+            Text {
+                text: root.mode == 0 ? "Match system" : root.mode == 1 ? "Light" : "Dark";
+                font-size: 13px;
+                color: Theme.text;
+            }
+        }
+    }
+    TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+component SettingCardView inherits Rectangle {
+    in property <SettingCard> card;
+    in property <bool> focused;
+    in property <bool> recording;
+    in property <int> theme-choice;
+    callback clicked();
+    callback theme-clicked(int);
+
+    if root.card.kind == 5 : Text {
+        x: 2px;
+        y: parent.height - 30px;
+        width: parent.width - 4px;
+        height: 24px;
+        text: root.card.title;
+        font-size: 13.5px;
+        font-weight: 600;
+        color: Theme.text;
+        vertical-alignment: center;
+    }
+
+    if root.card.kind != 5 : Card {
+        height: root.height - 6px;
+        focused: root.focused;
+        TouchArea {
+            clicked => { root.clicked(); }
+        }
+        VerticalLayout {
+            padding-left: 16px;
+            padding-right: 16px;
+            HorizontalLayout {
+                height: 62px;
+                spacing: 14px;
+                VerticalLayout {
+                    alignment: center;
+                    Icon {
+                        glyph: root.card.glyph;
+                        icon-size: 20px;
+                        tint: Theme.text;
+                    }
+                }
+                VerticalLayout {
+                    alignment: center;
+                    spacing: 2px;
+                    horizontal-stretch: 1;
+                    Text {
+                        text: root.card.title;
+                        font-size: 14px;
+                        color: Theme.text;
+                        overflow: elide;
+                    }
+                    if root.card.description != "" || root.card.error != "" : Text {
+                        text: root.card.error != "" ? root.card.error : root.card.description;
+                        font-size: 12px;
+                        color: root.card.error != "" ? Theme.danger : Theme.text-2;
+                        overflow: elide;
+                    }
+                }
+                if root.card.kind == 0 : VerticalLayout {
+                    horizontal-stretch: 0;
+                    alignment: center;
+                    if root.recording : Keycap {
+                        text: "Press the new keys…";
+                        live: true;
+                    }
+                    if !root.recording : KeyCombo { keys: root.card.keys; }
+                }
+                if root.card.kind == 1 : HorizontalLayout {
+                    horizontal-stretch: 0;
+                    spacing: 12px;
+                    Text {
+                        text: root.card.on ? "On" : "Off";
+                        font-size: 13px;
+                        color: Theme.text-2;
+                        vertical-alignment: center;
+                    }
+                    VerticalLayout {
+                        alignment: center;
+                        Switch { on: root.card.on; }
+                    }
+                }
+                if root.card.kind == 3 : VerticalLayout {
+                    horizontal-stretch: 0;
+                    alignment: center;
+                    PushButton {
+                        text: root.card.value;
+                        clicked => { root.clicked(); }
+                    }
+                }
+                if root.card.kind == 4 : Text {
+                    text: root.card.value;
+                    font-size: 13px;
+                    color: Theme.text-2;
+                    vertical-alignment: center;
+                }
+            }
+            if root.card.kind == 2 : HorizontalLayout {
+                padding-bottom: 16px;
+                spacing: 14px;
+                for mode in 3 : ThemeTile {
+                    mode: mode;
+                    chosen: root.theme-choice == mode;
+                    clicked => { root.theme-clicked(mode); }
+                }
+            }
+        }
+    }
+}
+
+export component SettingsWindow inherits Window {
+    title: "Wisp Settings";
+    icon: root.app-icon;
+    preferred-width: 880px;
+    preferred-height: 620px;
+    min-width: 760px;
+    min-height: 480px;
+    background: Theme.window;
+    default-font-size: 14px;
+
+    in property <image> app-icon;
+    in property <[NavItem]> pages;
+    in property <int> page;
+    in property <bool> nav-active;
+    in property <string> page-title;
+    in property <string> page-description;
+    in property <[SettingCard]> cards;
+    in property <length> cards-height;
+    in property <int> cursor;
+    in property <bool> recording;
+    in property <bool> cursor-on-shortcut;
+    in property <int> theme-choice;
+    in property <string> version;
+    in property <string> toast;
+    in property <bool> toast-error;
+
+    callback key(text: string, ctrl: bool, alt: bool, shift: bool, meta: bool) -> bool;
+    callback page-clicked(int);
+    callback card-clicked(int);
+    callback theme-clicked(int);
+
+    public function take-focus() {
+        router.focus();
+    }
+
+    function reveal() {
+        if root.cursor >= 0 && root.cursor < root.cards.length {
+            let c = root.cards[root.cursor];
+            if c.top < -flick.content-y {
+                flick.content-y = -max(0px, c.top - 40px);
+            } else if c.top + c.height > -flick.content-y + flick.height {
+                flick.content-y = -(c.top + c.height - flick.height + 8px);
+            }
+        }
+    }
+    changed cursor => { root.reveal(); }
+    changed page => { flick.content-y = 0; }
+
+    property <[KeyHint]> hints: root.recording ? [
+        { keys: "Esc", label: "Keep the old keys" },
+    ] : root.nav-active ? [
+        { keys: "↑ ↓", label: "Choose a page" },
+        { keys: "Enter", label: "Open it" },
+        { keys: "Esc", label: "Close" },
+    ] : root.cursor-on-shortcut ? [
+        { keys: "↑ ↓", label: "Move" },
+        { keys: "Enter", label: "Change keys" },
+        { keys: "Backspace", label: "Use default" },
+        { keys: "Tab", label: "Pages" },
+        { keys: "Esc", label: "Back" },
+    ] : [
+        { keys: "↑ ↓", label: "Move" },
+        { keys: "Enter", label: "Change" },
+        { keys: "← →", label: "Switch" },
+        { keys: "Tab", label: "Pages" },
+        { keys: "Esc", label: "Back" },
+    ];
+
+    router := FocusScope {
+        capture-key-pressed(e) => {
+            if root.key(e.text, e.modifiers.control, e.modifiers.alt, e.modifiers.shift, e.modifiers.meta) {
+                return accept;
+            }
+            reject
+        }
+
+        HorizontalLayout {
+            // Sidebar
+            Rectangle {
+                width: 232px;
+                background: Theme.surface-alt;
+                VerticalLayout {
+                    padding: 14px;
+                    padding-top: 20px;
+                    spacing: 3px;
+                    alignment: start;
+                    HorizontalLayout {
+                        padding-left: 8px;
+                        padding-bottom: 18px;
+                        spacing: 12px;
+                        Image {
+                            source: root.app-icon;
+                            width: 34px;
+                            height: 34px;
+                        }
+                        VerticalLayout {
+                            alignment: center;
+                            Text {
+                                text: "Wisp";
+                                font-size: 15px;
+                                font-weight: 600;
+                                color: Theme.text;
+                            }
+                            Text {
+                                text: "Settings";
+                                font-size: 12px;
+                                color: Theme.text-3;
+                            }
+                        }
+                    }
+                    for p[i] in root.pages : NavButton {
+                        glyph: p.glyph;
+                        label: p.label;
+                        selected: i == root.page;
+                        keyboard: root.nav-active && i == root.page;
+                        clicked => { root.page-clicked(i); }
+                    }
+                }
+                Text {
+                    x: 22px;
+                    y: parent.height - 34px;
+                    text: root.version;
+                    font-size: 11.5px;
+                    color: Theme.text-3;
+                }
+                Rectangle {
+                    x: parent.width - 1px;
+                    width: 1px;
+                    background: Theme.stroke;
+                }
+            }
+
+            // The page
+            VerticalLayout {
+                VerticalLayout {
+                    padding-left: 32px;
+                    padding-right: 32px;
+                    padding-top: 26px;
+                    padding-bottom: 14px;
+                    spacing: 6px;
+                    Text {
+                        text: root.page-title;
+                        font-size: 26px;
+                        font-weight: 600;
+                        color: Theme.text;
+                    }
+                    Text {
+                        text: root.page-description;
+                        font-size: 13px;
+                        color: Theme.text-2;
+                        wrap: word-wrap;
+                    }
+                }
+                Rectangle {
+                    vertical-stretch: 1;
+                    flick := Flickable {
+                        x: 32px;
+                        width: parent.width - 64px;
+                        content-height: root.cards-height + 16px;
+                        for c[i] in root.cards : SettingCardView {
+                            y: c.top;
+                            width: flick.width;
+                            height: c.height;
+                            card: c;
+                            focused: !root.nav-active && i == root.cursor;
+                            recording: root.recording && i == root.cursor;
+                            theme-choice: root.theme-choice;
+                            clicked => { root.card-clicked(i); }
+                            theme-clicked(mode) => { root.theme-clicked(mode); }
+                        }
+                    }
+                }
+                Rectangle {
+                    height: 40px;
+                    background: Theme.surface-alt;
+                    Rectangle {
+                        y: 0;
+                        height: 1px;
+                        background: Theme.stroke;
+                    }
+                    HorizontalLayout {
+                        padding-left: 32px;
+                        padding-right: 32px;
+                        spacing: 18px;
+                        alignment: start;
+                        if root.toast != "" : Text {
+                            text: root.toast;
+                            color: root.toast-error ? Theme.danger : Theme.accent;
+                            font-size: 12.5px;
+                            vertical-alignment: center;
+                            overflow: elide;
+                        }
+                        if root.toast == "" : HorizontalLayout {
+                            spacing: 18px;
+                            for h in root.hints : KeyHintView {
+                                keys: h.keys;
+                                label: h.label;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

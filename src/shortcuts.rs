@@ -77,6 +77,16 @@ impl Combo {
 
     /// How the combo is shown to people: "Ctrl+Alt+Shift+N" or "⌘⌥⇧N" on macOS.
     pub fn label(&self) -> String {
+        let parts = self.parts();
+        if cfg!(target_os = "macos") {
+            parts.concat()
+        } else {
+            parts.join("+")
+        }
+    }
+
+    /// The keys one by one, as printed on keycaps: ["Ctrl", "Alt", "N"] or ["⌘", "⌥", "N"].
+    pub fn parts(&self) -> Vec<String> {
         let key = match self.key.as_str() {
             "Up" => "↑",
             "Down" => "↓",
@@ -87,25 +97,18 @@ impl Combo {
             "Enter" if cfg!(target_os = "macos") => "↩",
             k => k,
         };
-        if cfg!(target_os = "macos") {
-            let mut s = String::new();
-            for (on, sym) in [(self.meta, "⌃"), (self.alt, "⌥"), (self.shift, "⇧"), (self.ctrl, "⌘")] {
-                if on {
-                    s.push_str(sym);
-                }
-            }
-            s + key
+        let modifiers: [(bool, &str); 4] = if cfg!(target_os = "macos") {
+            [(self.meta, "⌃"), (self.alt, "⌥"), (self.shift, "⇧"), (self.ctrl, "⌘")]
         } else {
             let meta = if cfg!(windows) { "Win" } else { "Super" };
-            let mut parts: Vec<&str> = Vec::new();
-            for (on, name) in [(self.ctrl, "Ctrl"), (self.alt, "Alt"), (self.shift, "Shift"), (self.meta, meta)] {
-                if on {
-                    parts.push(name);
-                }
-            }
-            parts.push(key);
-            parts.join("+")
-        }
+            [(self.ctrl, "Ctrl"), (self.alt, "Alt"), (self.shift, "Shift"), (self.meta, meta)]
+        };
+        modifiers
+            .iter()
+            .filter(|(on, _)| *on)
+            .map(|(_, name)| (*name).to_owned())
+            .chain(std::iter::once(key.to_owned()))
+            .collect()
     }
 }
 
@@ -314,6 +317,17 @@ mod tests {
         assert_eq!(Combo::from_event("，", true, false, false, false), Some(c("Ctrl+,")));
         assert_eq!(Combo::from_event("《", true, false, true, false), Some(c("Ctrl+Shift+,")));
         assert_eq!(Combo::from_event("、", true, false, false, false), Some(c("Ctrl+\\")));
+    }
+
+    #[test]
+    fn keycap_parts() {
+        let parts = c("Ctrl+Alt+Shift+N").parts();
+        if cfg!(target_os = "macos") {
+            assert_eq!(parts, ["⌘", "⌥", "⇧", "N"]);
+        } else {
+            assert_eq!(parts, ["Ctrl", "Alt", "Shift", "N"]);
+            assert_eq!(c("Ctrl+Down").label(), "Ctrl+↓");
+        }
     }
 
     #[test]

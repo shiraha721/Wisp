@@ -1,0 +1,77 @@
+import { Glyph } from "theme.slint";
+
+// One line in the notes list. `kind`: 0 note, 1 scheduled, 2 ringing, 3 overdue, 4 done.
+export struct ItemRow {
+    id: int,
+    kind: int,
+    title: string,
+    preview: string,
+    section: string,
+    start: string,
+    due: string,
+    overdue: bool,
+    bells: int,
+    ringing: bool,
+    note: string,
+    top: length,
+}
+
+export struct ReminderRow {
+    kind-label: string,
+    amount: string,
+    has-amount: bool,
+    placeholder: string,
+    fresh: bool,
+}
+
+export struct Hint {
+    text: string,
+    error: bool,
+}
+
+export struct HelpRow {
+    keys: string,
+    label: string,
+    section: string,
+}
+
+// The current label of each configurable shortcut, for hints.
+export struct Keys {
+    schedule: string,
+    open: string,
+    done: string,
+    delete: string,
+    undo: string,
+    inbox: string,
+    archive: string,
+    settings: string,
+    help: string,
+    add-reminder: string,
+    remove-reminder: string,
+    quit: string,
+}
+
+export struct KeyHint {
+    keys: string,
+    label: string,
+}
+
+export struct NavItem {
+    glyph: Glyph,
+    label: string,
+}
+
+// One row on a settings page. `kind`: 0 shortcut, 1 switch, 2 theme picker,
+// 3 button, 4 information, 5 group heading.
+export struct SettingCard {
+    kind: int,
+    glyph: Glyph,
+    title: string,
+    description: string,
+    value: string,
+    keys: [string],
+    on: bool,
+    error: string,
+    top: length,
+    height: length,
+}

@@ -5,6 +5,7 @@
 //! "Ctrl" always means the primary shortcut modifier, which is ⌘ on macOS (Slint
 //! reports ⌘ as `control` there), so one config works on every platform.
 
+use crate::i18n;
 use global_hotkey::hotkey::{Code, HotKey, Modifiers};
 use std::fmt;
 use std::str::FromStr;
@@ -45,14 +46,14 @@ impl Combo {
         if self.is_modified() || self.is_function_key() || (self.shift && self.key == "Enter") {
             Ok(())
         } else {
-            Err(format!("{} would get in the way of typing. Add Ctrl or Alt.", self.label()))
+            Err(tr!("{} would get in the way of typing. Add Ctrl or Alt.", self.label()))
         }
     }
 
     /// System-wide hotkeys need a modifier (or a function key) and a key the OS knows.
     pub fn validate_global(&self) -> Result<(), String> {
         if !self.is_modified() && !self.is_function_key() {
-            return Err(format!("{} alone is too easy to hit by accident. Add Ctrl, Alt or Shift+Ctrl.", self.label()));
+            return Err(tr!("{} alone is too easy to hit by accident. Add Ctrl, Alt or Shift+Ctrl.", self.label()));
         }
         self.to_hotkey().map(|_| ())
     }
@@ -71,7 +72,7 @@ impl Combo {
         }
         let code = code_name(&self.key)
             .and_then(|name| Code::from_str(&name).ok())
-            .ok_or_else(|| format!("{} can't be used as a system-wide key.", self.key))?;
+            .ok_or_else(|| tr!("{} can't be used as a system-wide key.", self.key))?;
         Ok(HotKey::new(Some(mods), code))
     }
 
@@ -85,17 +86,18 @@ impl Combo {
         }
     }
 
-    /// The keys one by one, as printed on keycaps: ["Ctrl", "Alt", "N"] or ["⌘", "⌥", "N"].
+    /// The keys one by one, as printed on keycaps: ["Ctrl", "Alt", "N"], ["Strg", "Alt", "N"]
+    /// in German, or ["⌘", "⌥", "N"] on macOS.
     pub fn parts(&self) -> Vec<String> {
         let key = match self.key.as_str() {
-            "Up" => "↑",
-            "Down" => "↓",
-            "Left" => "←",
-            "Right" => "→",
-            "Delete" if cfg!(target_os = "macos") => "⌦",
-            "Backspace" if cfg!(target_os = "macos") => "⌫",
-            "Enter" if cfg!(target_os = "macos") => "↩",
-            k => k,
+            "Up" => "↑".to_owned(),
+            "Down" => "↓".to_owned(),
+            "Left" => "←".to_owned(),
+            "Right" => "→".to_owned(),
+            "Delete" if cfg!(target_os = "macos") => "⌦".to_owned(),
+            "Backspace" if cfg!(target_os = "macos") => "⌫".to_owned(),
+            "Enter" if cfg!(target_os = "macos") => "↩".to_owned(),
+            k => key_name(k),
         };
         let modifiers: [(bool, &str); 4] = if cfg!(target_os = "macos") {
             [(self.meta, "⌃"), (self.alt, "⌥"), (self.shift, "⇧"), (self.ctrl, "⌘")]
@@ -106,8 +108,8 @@ impl Combo {
         modifiers
             .iter()
             .filter(|(on, _)| *on)
-            .map(|(_, name)| (*name).to_owned())
-            .chain(std::iter::once(key.to_owned()))
+            .map(|(_, name)| key_name(name))
+            .chain(std::iter::once(key))
             .collect()
     }
 }
@@ -151,6 +153,32 @@ impl FromStr for Combo {
         combo.key = key_from_name(key.trim()).ok_or_else(|| format!("Unknown key “{key}”."))?;
         Ok(combo)
     }
+}
+
+/// Key names as keyboards print them, which differs between languages ("Strg", "Entf", "Échap").
+const KEY_NAMES: [&str; 17] = [
+    tr_noop!("key" => "Ctrl"),
+    tr_noop!("key" => "Alt"),
+    tr_noop!("key" => "Shift"),
+    tr_noop!("key" => "Win"),
+    tr_noop!("key" => "Super"),
+    tr_noop!("key" => "Enter"),
+    tr_noop!("key" => "Escape"),
+    tr_noop!("key" => "Tab"),
+    tr_noop!("key" => "Space"),
+    tr_noop!("key" => "Backspace"),
+    tr_noop!("key" => "Delete"),
+    tr_noop!("key" => "Insert"),
+    tr_noop!("key" => "Home"),
+    tr_noop!("key" => "End"),
+    tr_noop!("key" => "PageUp"),
+    tr_noop!("key" => "PageDown"),
+    tr_noop!("key" => "Esc"),
+];
+
+/// How a key is printed in the language Wisp is shown in.
+pub fn key_name(name: &str) -> String {
+    KEY_NAMES.iter().find(|k| **k == name).map_or_else(|| name.to_owned(), |k| i18n::tr_ctx("key", k).to_owned())
 }
 
 const NAMED: &[(&str, &[&str])] = &[

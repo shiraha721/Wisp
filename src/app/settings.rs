@@ -7,6 +7,7 @@
 
 use super::{on_wayland, App};
 use crate::config::{self, Action, Theme, ACTIONS};
+use crate::i18n::{self, LANGUAGES};
 use crate::model::CATEGORY_COLORS;
 use crate::platform;
 use crate::shortcuts::Combo;
@@ -30,10 +31,13 @@ pub(super) enum Entry {
     Shortcut(usize),
     ResetShortcuts,
     Theme,
+    /// A language to show Wisp in (`None`: the system's).
+    Language(Option<usize>),
     Version,
     Folder,
 }
 
+/// A page of the settings. Its title and description are English; pass them through `i18n::tr`.
 struct Page {
     glyph: Glyph,
     title: &'static str,
@@ -44,21 +48,27 @@ const GENERAL: usize = 0;
 const CATEGORIES: usize = 1;
 const HOTKEYS: usize = 2;
 const APPEARANCE: usize = 3;
+const LANGUAGE: usize = 4;
 
-const PAGES: [Page; 5] = [
-    Page { glyph: Glyph::Gear, title: "General", description: "How Wisp starts, and how its window behaves." },
+const PAGES: [Page; 6] = [
+    Page { glyph: Glyph::Gear, title: tr_noop!("General"), description: tr_noop!("How Wisp starts, and how its window behaves.") },
     Page {
         glyph: Glyph::Tag,
-        title: "Categories",
-        description: "Lists like Daily, Work or School. In Wisp, type #name to file a note in one or to see only that one.",
+        title: tr_noop!("Categories"),
+        description: tr_noop!("Lists like Daily, Work or School. In Wisp, type #name to file a note in one or to see only that one."),
     },
     Page {
         glyph: Glyph::Keyboard,
-        title: "Hotkeys",
-        description: "Every key Wisp listens to. Select one, press Enter, then press the new combination.",
+        title: tr_noop!("Hotkeys"),
+        description: tr_noop!("Every key Wisp listens to. Select one, press Enter, then press the new combination."),
     },
-    Page { glyph: Glyph::Moon, title: "Appearance", description: "Light, dark, or whatever your system uses." },
-    Page { glyph: Glyph::Info, title: "About", description: "The version you're running and where your notes are kept." },
+    Page { glyph: Glyph::Moon, title: tr_noop!("Appearance"), description: tr_noop!("Light, dark, or whatever your system uses.") },
+    Page {
+        glyph: Glyph::Globe,
+        title: tr_noop!("Language"),
+        description: tr_noop!("The language of Wisp's windows, and of the dates you type besides English."),
+    },
+    Page { glyph: Glyph::Info, title: tr_noop!("About"), description: tr_noop!("The version you're running and where your notes are kept.") },
 ];
 
 #[derive(Default)]
@@ -95,11 +105,11 @@ fn action_glyph(action: Action) -> Glyph {
 
 fn autostart_title() -> &'static str {
     if cfg!(windows) {
-        "Start with Windows"
+        tr!("Start with Windows")
     } else if cfg!(target_os = "macos") {
-        "Open at login"
+        tr!("Open at login")
     } else {
-        "Start when you log in"
+        tr!("Start when you log in")
     }
 }
 
@@ -159,11 +169,11 @@ impl App {
     fn entries_for(&self, page: usize) -> Vec<Entry> {
         match page {
             GENERAL => vec![
-                Entry::Heading("Startup"),
+                Entry::Heading(tr_noop!("Startup")),
                 Entry::Autostart,
-                Entry::Heading("Window"),
+                Entry::Heading(tr_noop!("Window")),
                 Entry::HideInactive,
-                Entry::Heading("Reminders"),
+                Entry::Heading(tr_noop!("Reminders")),
                 Entry::OpenOnReminder,
             ],
             CATEGORIES => {
@@ -175,7 +185,7 @@ impl App {
                 entries
             }
             HOTKEYS => {
-                let mut entries = vec![Entry::Heading("Anywhere"), Entry::Summon];
+                let mut entries = vec![Entry::Heading(tr_noop!("Anywhere")), Entry::Summon];
                 let mut group = "";
                 for (i, info) in ACTIONS.iter().enumerate() {
                     if info.group != group {
@@ -184,10 +194,11 @@ impl App {
                     }
                     entries.push(Entry::Shortcut(i));
                 }
-                entries.extend([Entry::Heading("Defaults"), Entry::ResetShortcuts]);
+                entries.extend([Entry::Heading(tr_noop!("Defaults")), Entry::ResetShortcuts]);
                 entries
             }
             APPEARANCE => vec![Entry::Theme],
+            LANGUAGE => std::iter::once(Entry::Language(None)).chain((0..LANGUAGES.len()).map(|i| Entry::Language(Some(i)))).collect(),
             _ => vec![Entry::Version, Entry::Folder],
         }
     }
@@ -247,11 +258,11 @@ impl App {
         let current = s.entries.get(s.cursor).copied();
         let w = &self.settings_ui;
         w.set_pages(ModelRc::new(VecModel::from(
-            PAGES.iter().map(|p| NavItem { glyph: p.glyph, label: p.title.into() }).collect::<Vec<_>>(),
+            PAGES.iter().map(|p| NavItem { glyph: p.glyph, label: i18n::tr(p.title).into() }).collect::<Vec<_>>(),
         )));
         w.set_page(s.page as i32);
-        w.set_page_title(PAGES[s.page].title.into());
-        w.set_page_description(PAGES[s.page].description.into());
+        w.set_page_title(i18n::tr(PAGES[s.page].title).into());
+        w.set_page_description(i18n::tr(PAGES[s.page].description).into());
         w.set_cards(ModelRc::new(VecModel::from(cards)));
         w.set_cards_height(top);
         w.set_cursor(s.cursor as i32);
@@ -265,7 +276,7 @@ impl App {
             Theme::Light => 1,
             Theme::Dark => 2,
         });
-        w.set_version(format!("Version {}", env!("CARGO_PKG_VERSION")).into());
+        w.set_version(tr!("Version {}", env!("CARGO_PKG_VERSION")).into());
     }
 
     fn card_for(&self, entry: Entry) -> SettingCard {
@@ -279,27 +290,29 @@ impl App {
             ..Default::default()
         };
         match entry {
-            Entry::Heading(title) => SettingCard { kind: 5, title: title.into(), ..Default::default() },
-            Entry::Autostart => switch(Glyph::Power, autostart_title(), "Wisp waits in the tray, ready for your hotkey", self.config.launch_at_startup),
+            Entry::Heading(title) => SettingCard { kind: 5, title: i18n::tr(title).into(), ..Default::default() },
+            Entry::Autostart => {
+                switch(Glyph::Power, autostart_title(), tr!("Wisp waits in the tray, ready for your hotkey"), self.config.launch_at_startup)
+            }
             Entry::HideInactive => switch(
                 Glyph::Window,
-                "Hide when I click elsewhere",
-                "Like a launcher: the window gets out of the way when you switch apps",
+                tr!("Hide when I click elsewhere"),
+                tr!("Like a launcher: the window gets out of the way when you switch apps"),
                 self.config.hide_when_inactive,
             ),
             Entry::OpenOnReminder => switch(
                 Glyph::Bell,
-                "Open Wisp when a reminder rings",
-                "Shows the window as well as the system notification",
+                tr!("Open Wisp when a reminder rings"),
+                tr!("Shows the window as well as the system notification"),
                 self.config.open_on_reminder,
             ),
             Entry::Category(id) => {
                 let Some(category) = self.store.category(id) else { return SettingCard::default() };
                 let description = match self.store.category_counts(id) {
-                    (0, 0) => "No notes yet".to_owned(),
-                    (open, 0) => format!("{open} open"),
-                    (0, done) => format!("{done} done"),
-                    (open, done) => format!("{open} open, {done} done"),
+                    (0, 0) => tr!("No notes yet").to_owned(),
+                    (open, 0) => tr!("{} open", open),
+                    (0, done) => tr!("{} done", done),
+                    (open, done) => tr!("{} open, {} done", open, done),
                 };
                 SettingCard {
                     kind: 6,
@@ -315,7 +328,7 @@ impl App {
                 let color = (0..CATEGORY_COLORS).find(|c| !used.contains(c)).unwrap_or(0);
                 SettingCard {
                     kind: 6,
-                    description: "Enter adds it, Esc cancels".into(),
+                    description: tr!("Enter adds it, Esc cancels").into(),
                     tint: i32::from(color),
                     editing: true,
                     ..Default::default()
@@ -324,21 +337,21 @@ impl App {
             Entry::AddCategory => SettingCard {
                 kind: 3,
                 glyph: Glyph::Plus,
-                title: "Add a category".into(),
-                description: format!("Then file notes with #name, or with {} on a note", self.label(Action::Category)).into(),
-                value: "Add".into(),
+                title: tr!("Add a category").into(),
+                description: tr!("Then file notes with #name, or with {} on a note", self.label(Action::Category)).into(),
+                value: tr!("Add").into(),
                 ..Default::default()
             },
             Entry::Summon => {
                 let description = match &self.summon_problem {
                     Some(problem) => problem.clone(),
-                    None if on_wayland() => "On Wayland, also bind “wisp --toggle” to a key in your system settings".into(),
-                    None => "Works in every app. Press it again to hide Wisp.".into(),
+                    None if on_wayland() => tr!("On Wayland, also bind “wisp --toggle” to a key in your system settings").into(),
+                    None => tr!("Works in every app. Press it again to hide Wisp.").into(),
                 };
                 SettingCard {
                     kind: 0,
                     glyph: Glyph::Bolt,
-                    title: "Open Wisp from anywhere".into(),
+                    title: tr!("Open Wisp from anywhere").into(),
                     description: description.into(),
                     keys: keys(self.summon_keys()),
                     ..Default::default()
@@ -348,12 +361,12 @@ impl App {
                 let info = &ACTIONS[i];
                 let combo = self.config.combo(info.action);
                 let default: Combo = info.default.parse().expect("defaults parse");
-                let description =
-                    if combo == default { info.description.to_owned() } else { format!("{} (default: {})", info.description, default.label()) };
+                let description = i18n::tr(info.description);
+                let description = if combo == default { description.to_owned() } else { tr!("{} (default: {})", description, default.label()) };
                 SettingCard {
                     kind: 0,
                     glyph: action_glyph(info.action),
-                    title: info.label.into(),
+                    title: i18n::tr(info.label).into(),
                     description: description.into(),
                     keys: keys(combo),
                     ..Default::default()
@@ -362,32 +375,47 @@ impl App {
             Entry::ResetShortcuts => SettingCard {
                 kind: 3,
                 glyph: Glyph::Undo,
-                title: "Reset all shortcuts".into(),
-                description: "Puts every key, including the one that opens Wisp, back to its default".into(),
-                value: "Reset".into(),
+                title: tr!("Reset all shortcuts").into(),
+                description: tr!("Puts every key, including the one that opens Wisp, back to its default").into(),
+                value: tr!("Reset").into(),
                 ..Default::default()
             },
             Entry::Theme => SettingCard {
                 kind: 2,
                 glyph: Glyph::Moon,
-                title: "Theme".into(),
-                description: "Applies to the launcher and this window".into(),
+                title: tr!("Theme").into(),
+                description: tr!("Applies to the launcher and this window").into(),
                 ..Default::default()
             },
+            Entry::Language(choice) => {
+                let chosen = i18n::resolve_choice(&self.config.language) == choice;
+                let (title, description) = match choice {
+                    None => {
+                        let system = &LANGUAGES[i18n::resolve(i18n::SYSTEM)];
+                        (tr!("Match system").to_owned(), tr!("Follows your system's language ({} right now)", system.name))
+                    }
+                    Some(i) => {
+                        let language = &LANGUAGES[i];
+                        let english = i18n::tr(language.english);
+                        (language.name.to_owned(), if english == language.name { String::new() } else { english.to_owned() })
+                    }
+                };
+                SettingCard { kind: 7, glyph: Glyph::Globe, title: title.into(), description: description.into(), on: chosen, ..Default::default() }
+            }
             Entry::Version => SettingCard {
                 kind: 4,
                 glyph: Glyph::Info,
                 title: "Wisp".into(),
-                description: "A keyboard-first catcher for ideas, memos and to-dos".into(),
-                value: format!("Version {}", env!("CARGO_PKG_VERSION")).into(),
+                description: tr!("A keyboard-first catcher for ideas, memos and to-dos").into(),
+                value: tr!("Version {}", env!("CARGO_PKG_VERSION")).into(),
                 ..Default::default()
             },
             Entry::Folder => SettingCard {
                 kind: 3,
                 glyph: Glyph::Folder,
-                title: if self.portable { "Notes folder (next to Wisp)" } else { "Notes folder" }.into(),
+                title: if self.portable { tr!("Notes folder (next to Wisp)") } else { tr!("Notes folder") }.into(),
                 description: self.data_dir.display().to_string().into(),
-                value: "Open folder".into(),
+                value: tr!("Open folder").into(),
                 ..Default::default()
             },
         }
@@ -502,7 +530,7 @@ impl App {
                 }
                 "Backspace" | "Delete" if bare => {
                     match current {
-                        Some(Entry::Category(id)) => self.remove_category(id, confirming == Some(id), "Press Delete again"),
+                        Some(Entry::Category(id)) => self.remove_category(id, confirming == Some(id), false),
                         _ => self.reset_setting(),
                     }
                     true
@@ -598,7 +626,7 @@ impl App {
             let confirmed = self.settings.confirm_remove.take() == Some(id);
             self.settings.cursor = index as usize;
             self.settings.nav_active = false;
-            self.remove_category(id, confirmed, "Click the bin again");
+            self.remove_category(id, confirmed, true);
             self.render_settings();
             self.settings_ui.invoke_take_focus();
         }
@@ -635,13 +663,14 @@ impl App {
                 self.reload_entries(Some(Entry::NewCategory));
             }
             Some(Entry::Theme) => self.cycle_theme(1),
+            Some(Entry::Language(choice)) => self.set_language(choice),
             Some(Entry::ResetShortcuts) => {
                 self.config.shortcuts.clear();
                 self.config.summon.clear();
                 self.claim_summon();
                 match self.summon_problem.clone() {
                     Some(problem) => self.settings.error = Some((Entry::ResetShortcuts, problem)),
-                    None => self.settings_toast("Every shortcut is back to its default.", false),
+                    None => self.settings_toast(tr!("Every shortcut is back to its default."), false),
                 }
                 self.save_config();
                 self.apply_config_to_ui();
@@ -657,12 +686,12 @@ impl App {
                 let info = &ACTIONS[i];
                 let combo: Combo = info.default.parse().expect("defaults parse");
                 if let Some(other) = self.config.conflict(&combo, info.id) {
-                    self.settings.error = Some((entry, format!("{} is taken by “{other}”", combo.label())));
+                    self.settings.error = Some((entry, tr!("{} is taken by “{}”", combo.label(), i18n::tr(other))));
                 } else {
                     self.config.set_shortcut(info.id, &combo);
                     self.save_config();
                     self.apply_config_to_ui();
-                    self.settings_toast(format!("{} is back to {}.", info.label, combo.label()), false);
+                    self.settings_toast(tr!("{} is back to {}.", i18n::tr(info.label), combo.label()), false);
                 }
             }
             Some(Entry::Summon) => self.apply_summon(config::default_summon()),
@@ -718,16 +747,19 @@ impl App {
         }
     }
 
-    /// Removes a category once `confirmed`; until then, explains what will happen.
-    fn remove_category(&mut self, id: u64, confirmed: bool, again: &str) {
+    /// Removes a category once `confirmed`; until then, explains what will happen
+    /// (and how to confirm: Delete again, or `clicked` the bin again).
+    fn remove_category(&mut self, id: u64, confirmed: bool, clicked: bool) {
         let Some(name) = self.store.category(id).map(|c| c.name.clone()) else { return };
         if !confirmed {
             let (open, done) = self.store.category_counts(id);
-            let message = if open + done == 0 {
-                format!("{again} to remove it.")
-            } else {
-                format!("{again} to remove it. Its notes stay, without a category.")
-            };
+            let message = match (clicked, open + done == 0) {
+                (false, true) => tr!("Press Delete again to remove it."),
+                (false, false) => tr!("Press Delete again to remove it. Its notes stay, without a category."),
+                (true, true) => tr!("Click the bin again to remove it."),
+                (true, false) => tr!("Click the bin again to remove it. Its notes stay, without a category."),
+            }
+            .to_owned();
             self.settings.confirm_remove = Some(id);
             self.settings.error = Some((Entry::Category(id), message));
             return;
@@ -737,7 +769,7 @@ impl App {
         self.categories_changed();
         self.settings.error = None;
         self.reload_entries(None);
-        self.settings_toast(format!("Removed “{name}”."), false);
+        self.settings_toast(tr!("Removed “{}”.", name), false);
     }
 
     /// Brings the launcher up to date after categories were added, renamed or removed.
@@ -777,7 +809,7 @@ impl App {
         let valid = if entry == Entry::Summon { combo.validate_global() } else { combo.validate_local() };
         let problem = valid
             .err()
-            .or_else(|| self.config.conflict(&combo, id).map(|other| format!("{} is taken by “{other}”", combo.label())));
+            .or_else(|| self.config.conflict(&combo, id).map(|other| tr!("{} is taken by “{}”", combo.label(), i18n::tr(other))));
         if let Some(problem) = problem {
             self.settings.error = Some((entry, problem));
             self.render_settings(); // keep listening
@@ -791,7 +823,7 @@ impl App {
                 self.config.set_shortcut(id, &combo);
                 self.save_config();
                 self.apply_config_to_ui();
-                self.settings_toast(format!("Saved: {}", combo.label()), false);
+                self.settings_toast(tr!("Saved: {}", combo.label()), false);
             }
         }
         self.render_settings();
@@ -805,7 +837,7 @@ impl App {
                 self.summon_problem = None;
                 self.save_config();
                 self.apply_config_to_ui();
-                self.settings_toast(format!("{} now opens Wisp from anywhere.", combo.label()), false);
+                self.settings_toast(tr!("{} now opens Wisp from anywhere.", combo.label()), false);
             }
             Err(err) => {
                 self.settings.error = Some((Entry::Summon, err));
@@ -824,8 +856,18 @@ impl App {
                 self.config.launch_at_startup = enabled;
                 self.save_config();
             }
-            Err(err) => self.settings.error = Some((Entry::Autostart, format!("Couldn't change it: {err}"))),
+            Err(err) => self.settings.error = Some((Entry::Autostart, tr!("Couldn't change it: {}", err))),
         }
+    }
+
+    /// Shows Wisp in another language (`None`: the system's), right away.
+    fn set_language(&mut self, choice: Option<usize>) {
+        self.config.language = choice.map_or_else(|| i18n::SYSTEM.to_owned(), |i| LANGUAGES[i].code.to_owned());
+        self.save_config();
+        i18n::apply(&self.config.language);
+        self.apply_config_to_ui();
+        self.refresh();
+        self.reload_entries(Some(Entry::Language(choice)));
     }
 
     fn cycle_theme(&mut self, delta: i32) {

@@ -397,7 +397,7 @@ component CategoryPicker inherits FocusScope {
         VerticalLayout {
             alignment: center;
             TagChip {
-                label: "None";
+                label: @tr("None");
                 chosen: root.chosen < 0;
                 ring: root.has-focus && root.chosen < 0;
                 clicked => {
@@ -506,7 +506,7 @@ component EditorPane inherits Rectangle {
                             }
                         }
                         Text {
-                            text: "Notes";
+                            text: @tr("note details" => "Notes");
                             font-size: 13px;
                             color: Theme.text;
                             vertical-alignment: center;
@@ -516,7 +516,7 @@ component EditorPane inherits Rectangle {
                         font-size: 13.5px;
                         min-lines: 3;
                         limit: 136px;
-                        placeholder: "Details, links, a checklist… Enter starts a new line.";
+                        placeholder: @tr("Details, links, a checklist… Enter starts a new line.");
                         text <=> root.notes;
                         active: root.active;
                         edited => { root.edited(); }
@@ -544,7 +544,7 @@ component EditorPane inherits Rectangle {
                     }
                     Text {
                         width: 64px;
-                        text: "Category";
+                        text: @tr("Category");
                         font-size: 13px;
                         color: Theme.text;
                         vertical-alignment: center;
@@ -575,9 +575,9 @@ component EditorPane inherits Rectangle {
                     padding-bottom: 2px;
                     start-row := DateRow {
                         glyph: Glyph.calendar;
-                        label: "Starts";
+                        label: @tr("Starts");
                         text <=> root.start;
-                        placeholder: "tomorrow 9am, fri 14:00, +2h";
+                        placeholder: @tr("date example" => "tomorrow 9am, fri 14:00, +2h");
                         hint: root.start-hint;
                         active: root.active;
                         edited => { root.edited(); }
@@ -589,9 +589,9 @@ component EditorPane inherits Rectangle {
                     }
                     due-row := DateRow {
                         glyph: Glyph.flag;
-                        label: "Due";
+                        label: @tr("Due");
                         text <=> root.due;
-                        placeholder: "fri 17:00, 10-20, next mon";
+                        placeholder: @tr("date example" => "fri 17:00, 10-20, next mon");
                         hint: root.due-hint;
                         active: root.active;
                         edited => { root.edited(); }
@@ -619,13 +619,13 @@ component EditorPane inherits Rectangle {
                         }
                         Text {
                             horizontal-stretch: 1;
-                            text: "Reminders";
+                            text: @tr("Reminders");
                             font-size: 13px;
                             color: Theme.text;
                             vertical-alignment: center;
                         }
                         if !root.can-add : Text {
-                            text: "Set a start or due time first";
+                            text: @tr("Set a start or due time first");
                             font-size: 12px;
                             color: Theme.text-3;
                             vertical-alignment: center;
@@ -682,7 +682,7 @@ component EditorPane inherits Rectangle {
                                             }
                                         }
                                         Text {
-                                            text: "Add a reminder";
+                                            text: @tr("Add a reminder");
                                             font-size: 13px;
                                             color: root.can-add ? Theme.accent : Theme.text-3;
                                             vertical-alignment: center;
@@ -909,53 +909,57 @@ export component AppWindow inherits Window {
     changed selected => { root.scroll-to-selection(); }
     changed items => { root.scroll-to-selection(); }
 
+    property <string> esc: @tr("key" => "Esc");
+    property <string> enter: @tr("key" => "Enter");
+    property <string> tab: @tr("key" => "Tab");
+    property <string> del: @tr("key" => "Del");
     property <[KeyHint]> hints: root.view == View.editor ? (root.on-reminder ? (editor.focused-part == 0 ? [
-        { keys: "← →", label: "Change type" },
-        { keys: "Del", label: "Remove reminder" },
-        { keys: "Esc", label: "Save and close" },
+        { keys: "← →", label: @tr("Change type") },
+        { keys: root.del, label: @tr("Remove reminder") },
+        { keys: root.esc, label: @tr("Save and close") },
     ] : [
-        { keys: root.keys.remove-reminder, label: "Remove reminder" },
-        { keys: "Tab", label: "Next field" },
-        { keys: "Esc", label: "Save and close" },
+        { keys: root.keys.remove-reminder, label: @tr("Remove reminder") },
+        { keys: root.tab, label: @tr("Next field") },
+        { keys: root.esc, label: @tr("Save and close") },
     ]) : editor.notes-focused ? [
-        { keys: "Enter", label: "New line" },
-        { keys: "Tab", label: "Next field" },
-        { keys: "Esc", label: "Save and close" },
+        { keys: root.enter, label: @tr("New line") },
+        { keys: root.tab, label: @tr("Next field") },
+        { keys: root.esc, label: @tr("Save and close") },
     ] : editor.category-focused ? [
-        { keys: "← →", label: "Change category" },
-        { keys: "Del", label: "No category" },
-        { keys: "Tab", label: "Next field" },
-        { keys: "Esc", label: "Save and close" },
+        { keys: "← →", label: @tr("Change category") },
+        { keys: root.del, label: @tr("No category") },
+        { keys: root.tab, label: @tr("Next field") },
+        { keys: root.esc, label: @tr("Save and close") },
     ] : editor.date-focused ? [
-        { keys: "Enter", label: "Save and close" },
-        { keys: "Tab", label: "Next field" },
-        { keys: root.keys.add-reminder, label: "Add reminder" },
+        { keys: root.enter, label: @tr("Save and close") },
+        { keys: root.tab, label: @tr("Next field") },
+        { keys: root.keys.add-reminder, label: @tr("Add reminder") },
     ] : editor.add-focused ? [
-        { keys: "Enter", label: "Add reminder" },
-        { keys: "Esc", label: "Save and close" },
+        { keys: root.enter, label: @tr("Add reminder") },
+        { keys: root.esc, label: @tr("Save and close") },
     ] : [
-        { keys: "Enter", label: "Go to notes" },
-        { keys: "Esc", label: "Save and close" },
-        { keys: root.keys.done, label: "Mark done" },
+        { keys: root.enter, label: @tr("Go to notes") },
+        { keys: root.esc, label: @tr("Save and close") },
+        { keys: root.keys.done, label: @tr("Mark done") },
     ]) : root.view == View.help ? [
-        { keys: "Esc", label: "Back" },
-        { keys: "↑ ↓", label: "Scroll" },
+        { keys: root.esc, label: @tr("Back") },
+        { keys: "↑ ↓", label: @tr("Scroll") },
     ] : root.selected >= 0 ? [
-        { keys: "Enter", label: "Open" },
-        { keys: root.keys.done, label: root.view == View.archive ? "Bring back" : "Mark done" },
-        { keys: root.keys.category, label: "Category" },
-        { keys: root.keys.delete, label: "Delete" },
+        { keys: root.enter, label: @tr("Open") },
+        { keys: root.keys.done, label: root.view == View.archive ? @tr("Bring back") : @tr("Mark done") },
+        { keys: root.keys.category, label: @tr("Category") },
+        { keys: root.keys.delete, label: @tr("Delete") },
     ] : root.view == View.archive ? [
-        { keys: "↓", label: "Browse" },
-        { keys: root.keys.inbox, label: "Notes" },
-        { keys: root.keys.settings, label: "Settings" },
-        { keys: root.keys.help, label: "Shortcuts" },
+        { keys: "↓", label: @tr("Browse") },
+        { keys: root.keys.inbox, label: @tr("Notes") },
+        { keys: root.keys.settings, label: @tr("Settings") },
+        { keys: root.keys.help, label: @tr("Shortcuts") },
     ] : [
-        { keys: "Enter", label: "Save" },
-        { keys: root.keys.schedule, label: "Save with a date" },
-        { keys: root.keys.category, label: "Category" },
-        { keys: "↓", label: "Browse" },
-        { keys: root.keys.help, label: "Shortcuts" },
+        { keys: root.enter, label: @tr("Save") },
+        { keys: root.keys.schedule, label: @tr("Save with a date") },
+        { keys: root.keys.category, label: @tr("Category") },
+        { keys: "↓", label: @tr("Browse") },
+        { keys: root.keys.help, label: @tr("Shortcuts") },
     ];
 
     router := FocusScope {
@@ -1000,7 +1004,7 @@ export component AppWindow inherits Window {
                                 limit: 112px;
                                 visible: root.listing;
                                 active: root.listing;
-                                placeholder: root.view == View.archive ? "Search what's done" : "Type a thought. Enter saves it.";
+                                placeholder: root.view == View.archive ? @tr("Search what's done") : @tr("Type a thought. Enter saves it.");
                                 text <=> root.query;
                                 edited => { root.query-edited(); }
                             }
@@ -1022,14 +1026,14 @@ export component AppWindow inherits Window {
                             if root.view == View.editor && root.edit-title == "" : Text {
                                 height: parent.height;
                                 vertical-alignment: center;
-                                text: "Title";
+                                text: @tr("Title");
                                 font-size: 19px;
                                 color: Theme.text-3;
                             }
                             if root.view == View.help : Text {
                                 height: parent.height;
                                 vertical-alignment: center;
-                                text: "Keyboard shortcuts";
+                                text: @tr("Keyboard shortcuts");
                                 font-size: 19px;
                                 color: Theme.text;
                             }
@@ -1067,13 +1071,13 @@ export component AppWindow inherits Window {
                         padding-left: 8px;
                         padding-right: 18px;
                         TabButton {
-                            label: "Notes";
+                            label: @tr("Notes");
                             count: root.open-count;
                             active: root.view == View.inbox;
                             clicked => { root.tab-clicked(0); }
                         }
                         TabButton {
-                            label: "Done";
+                            label: @tr("Done");
                             count: root.done-count;
                             active: root.view == View.archive;
                             clicked => { root.tab-clicked(1); }
@@ -1099,7 +1103,7 @@ export component AppWindow inherits Window {
                                 if root.categories.length > 0 : VerticalLayout {
                                     alignment: center;
                                     TagChip {
-                                        label: "All";
+                                        label: @tr("All");
                                         chosen: root.category-filter < 0;
                                         clicked => { root.category-clicked(-1); }
                                     }

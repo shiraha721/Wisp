@@ -72,7 +72,7 @@ fn portable_dir(exe_dir: &Path, user_dir: &Path, create: bool) -> Option<DataDir
 
 fn auto_launch() -> Result<auto_launch::AutoLaunch, String> {
     let exe = std::env::current_exe().map_err(|e| e.to_string())?;
-    let exe = exe.to_str().ok_or("The program path isn't valid Unicode.")?;
+    let exe = exe.to_str().ok_or_else(|| tr!("The program path isn't valid Unicode.").to_owned())?;
     auto_launch::AutoLaunchBuilder::new()
         .set_app_name("Wisp")
         .set_app_path(exe)

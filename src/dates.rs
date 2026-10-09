@@ -1,10 +1,18 @@
 //! Forgiving date/time input ("tomorrow 9am", "fri 17:00", "+30m", "10-12 14:00",
-//! "明天下午3点") and the short labels shown in the UI.
+//! "明天下午3点", "demain 14h") and the short labels shown in the UI, in the
+//! language Wisp is shown in.
+//!
+//! Input in other languages is first rewritten into English words (see
+//! `dates/words.rs`), which the parser here reads.
 //!
 //! Everything is generic over the time zone so tests can pin an offset; the app
 //! itself always passes `chrono::Local`.
 
+mod words;
+
+use crate::i18n;
 use chrono::{DateTime, Datelike, Duration, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Timelike, Weekday};
+use std::fmt::Write;
 
 /// Parses `input` relative to `now`.
 ///
@@ -18,7 +26,7 @@ pub fn parse<Tz: TimeZone>(
     now: &DateTime<Tz>,
     default_time: NaiveTime,
 ) -> Result<Option<DateTime<Tz>>, String> {
-    let normalized = normalize_cjk(&input.trim().to_lowercase());
+    let normalized = words::normalize(&input.trim().to_lowercase(), i18n::current().code);
     let tokens: Vec<String> = normalized
         .split(|c: char| c.is_whitespace() || c == ',')
         .filter(|t| !t.is_empty())
@@ -62,7 +70,7 @@ pub fn parse<Tz: TimeZone>(
             "pm-prefix" => meridiem_prefix = Some(Meridiem::Pm),
             "noon-prefix" => meridiem_prefix = Some(Meridiem::Noon),
             "next" => {
-                let Some(n) = next else { return Err("“next” what? Try “next fri”.".into()) };
+                let Some(n) = next else { return Err(tr!("“next” what? Try “next fri”.").into()) };
                 if let Some(wd) = weekday(n) {
                     date = Some(next_weekday(today, wd, true));
                 } else if matches!(n, "week" | "wk") {
@@ -70,17 +78,17 @@ pub fn parse<Tz: TimeZone>(
                 } else if n == "month" {
                     date = Some(add_months(today, 1));
                 } else {
-                    return Err(format!("Couldn't read “next {n}”."));
+                    return Err(tr!("Couldn't read “next {}”.", n));
                 }
                 consumed = 2;
             }
             "in" | "+" => {
                 // "in 30m", "in 2 hours", "in 3 days", "in 45"
-                let Some(n) = next else { return Err("“in” how long? Try “in 30m”.".into()) };
+                let Some(n) = next else { return Err(tr!("“in” how long? Try “in 30m”.").into()) };
                 let unit = tokens.get(i + 2).map(String::as_str);
                 let (minutes, used) = duration_tokens(n, unit)
                     .or_else(|| n.parse::<i64>().ok().map(|m| (m, 1)))
-                    .ok_or_else(|| format!("Couldn't read “in {n}”."))?;
+                    .ok_or_else(|| tr!("Couldn't read “in {}”.", n))?;
                 relative = Some(from_now(minutes));
                 consumed = 1 + used;
             }
@@ -93,7 +101,7 @@ pub fn parse<Tz: TimeZone>(
                     date = Some(upcoming_month_day(today, m, d)?);
                 } else if let Some(m) = month_name(tok) {
                     // "oct 12" / "october 12th"
-                    let day = next.and_then(day_number).ok_or_else(|| format!("Which day of {tok}?"))?;
+                    let day = next.and_then(day_number).ok_or_else(|| tr!("Which day of {}?", tok))?;
                     date = Some(upcoming_month_day(today, m, day)?);
                     consumed = 2;
                 } else if let (Some(day), Some(m)) = (day_number(tok), next.and_then(month_name)) {
@@ -104,8 +112,7 @@ pub fn parse<Tz: TimeZone>(
                     date = Some(upcoming_day_of_month(today, day)?);
                 } else if tok.starts_with('+') || has_unit_suffix(tok) {
                     let rest = tok.trim_start_matches('+');
-                    let (minutes, used) = duration_tokens(rest, next)
-                        .ok_or_else(|| format!("Couldn't read “{tok}”."))?;
+                    let (minutes, used) = duration_tokens(rest, next).ok_or_else(|| tr!("Couldn't read “{}”.", tok))?;
                     relative = Some(from_now(minutes));
                     consumed = used;
                 } else if let Some((minutes, 2)) = duration_tokens(tok, next) {
@@ -116,7 +123,7 @@ pub fn parse<Tz: TimeZone>(
                     time = Some(t);
                     consumed = used;
                 } else {
-                    return Err(format!("Couldn't read “{tok}”."));
+                    return Err(tr!("Couldn't read “{}”.", tok));
                 }
             }
         }
@@ -135,7 +142,7 @@ pub fn parse<Tz: TimeZone>(
             let candidate = today.and_time(t);
             if candidate > now_local { candidate } else { candidate + Duration::days(1) }
         }
-        (None, None) => return Err("Add a day or a time, like “tomorrow 9am”.".into()),
+        (None, None) => return Err(tr!("Add a day or a time, like “tomorrow 9am”.").into()),
     };
     Ok(Some(resolve_local(&now.timezone(), naive)))
 }
@@ -148,22 +155,123 @@ where
     t.format("%Y-%m-%d %H:%M").to_string()
 }
 
-/// "Today 14:00", "Tomorrow 09:00", "Fri 17:00", "Oct 12 09:00", "Jan 3 2027 09:00".
+/// Weekday and month names for the patterns below, translated where they're used.
+const WEEKDAY_NAMES: [&str; 7] = [
+    tr_noop!("weekday" => "Mon"),
+    tr_noop!("weekday" => "Tue"),
+    tr_noop!("weekday" => "Wed"),
+    tr_noop!("weekday" => "Thu"),
+    tr_noop!("weekday" => "Fri"),
+    tr_noop!("weekday" => "Sat"),
+    tr_noop!("weekday" => "Sun"),
+];
+const MONTH_NAMES: [&str; 12] = [
+    tr_noop!("month" => "Jan"),
+    tr_noop!("month" => "Feb"),
+    tr_noop!("month" => "Mar"),
+    tr_noop!("month" => "Apr"),
+    tr_noop!("month" => "May"),
+    tr_noop!("month" => "Jun"),
+    tr_noop!("month" => "Jul"),
+    tr_noop!("month" => "Aug"),
+    tr_noop!("month" => "Sep"),
+    tr_noop!("month" => "Oct"),
+    tr_noop!("month" => "Nov"),
+    tr_noop!("month" => "Dec"),
+];
+
+/// `t` written with a pattern from a translation: chrono's codes, where `%a` and
+/// `%b` are the weekday and month in the language Wisp is shown in.
+pub fn format_date<Tz: TimeZone>(t: &DateTime<Tz>, pattern: &str) -> String
+where
+    Tz::Offset: std::fmt::Display,
+{
+    try_format(t, pattern).or_else(|| try_format(t, "%Y-%m-%d %H:%M")).unwrap_or_default()
+}
+
+/// [`format_date`], or `None` if the pattern isn't one chrono understands.
+pub fn try_format<Tz: TimeZone>(t: &DateTime<Tz>, pattern: &str) -> Option<String>
+where
+    Tz::Offset: std::fmt::Display,
+{
+    let weekday = i18n::tr_ctx("weekday", WEEKDAY_NAMES[t.weekday().num_days_from_monday() as usize]);
+    let month = i18n::tr_ctx("month", MONTH_NAMES[t.month0() as usize]);
+    let pattern = pattern.replace("%a", &weekday.replace('%', "%%")).replace("%b", &month.replace('%', "%%"));
+    let mut out = String::new();
+    write!(out, "{}", t.format(&pattern)).ok()?;
+    Some(out)
+}
+
+/// The day and time, starting a sentence: "Today 14:00", "Tomorrow 09:00", "Fri 17:00",
+/// "Oct 12 09:00", "Jan 3 2027 09:00".
 pub fn day_label<Tz: TimeZone>(t: &DateTime<Tz>, now: &DateTime<Tz>) -> String
+where
+    Tz::Offset: std::fmt::Display,
+{
+    day_label_in(t, now, true)
+}
+
+/// [`day_label`] for the middle of a sentence: "Due tomorrow 09:00".
+pub fn day_label_inline<Tz: TimeZone>(t: &DateTime<Tz>, now: &DateTime<Tz>) -> String
+where
+    Tz::Offset: std::fmt::Display,
+{
+    day_label_in(t, now, false)
+}
+
+fn day_label_in<Tz: TimeZone>(t: &DateTime<Tz>, now: &DateTime<Tz>, starts: bool) -> String
 where
     Tz::Offset: std::fmt::Display,
 {
     let day = t.date_naive();
     let today = now.date_naive();
-    let clock = t.format("%H:%M");
+    let clock = t.format("%H:%M").to_string();
     match (day - today).num_days() {
-        0 => format!("Today {clock}"),
-        1 => format!("Tomorrow {clock}"),
-        -1 => format!("Yesterday {clock}"),
-        2..=6 => format!("{} {clock}", t.format("%a")),
-        _ if day.year() == today.year() => format!("{} {clock}", t.format("%b %-d")),
-        _ => format!("{} {clock}", t.format("%b %-d %Y")),
+        0 if starts => tr!("Today {}", clock),
+        0 => tr!("today {}", clock),
+        1 if starts => tr!("Tomorrow {}", clock),
+        1 => tr!("tomorrow {}", clock),
+        -1 if starts => tr!("Yesterday {}", clock),
+        -1 => tr!("yesterday {}", clock),
+        // Translators: a weekday and a time, as in "Fri 17:00". %a is the weekday, %H:%M the time.
+        2..=6 => format_date(t, tr!("date format" => "%a %H:%M")),
+        // Translators: a date this year and a time, as in "Oct 12 09:00". %b is the month, %-d the day.
+        _ if day.year() == today.year() => format_date(t, tr!("date format" => "%b %-d %H:%M")),
+        // Translators: a date in another year and a time, as in "Jan 3 2027 09:00".
+        _ => format_date(t, tr!("date format" => "%b %-d %Y %H:%M")),
     }
+}
+
+/// A day without the time: "Oct 12", or "Jan 3 2027" in another year.
+pub fn short_date<Tz: TimeZone>(t: &DateTime<Tz>, now: &DateTime<Tz>) -> String
+where
+    Tz::Offset: std::fmt::Display,
+{
+    if t.year() == now.year() {
+        // Translators: a day this year, as in "Oct 12". %b is the month, %-d the day.
+        format_date(t, tr!("date format" => "%b %-d"))
+    } else {
+        // Translators: a day in another year, as in "Jan 3 2027".
+        format_date(t, tr!("date format" => "%b %-d %Y"))
+    }
+}
+
+/// The date under the clock: "Fri, Oct 9".
+pub fn header_date<Tz: TimeZone>(now: &DateTime<Tz>) -> String
+where
+    Tz::Offset: std::fmt::Display,
+{
+    // Translators: the date under the clock, as in "Fri, Oct 9".
+    format_date(now, tr!("date format" => "%a, %b %-d"))
+}
+
+/// A date the editor read from a field: "Fri Oct 9, 17:00".
+pub fn full_label<Tz: TimeZone>(t: &DateTime<Tz>) -> String
+where
+    Tz::Offset: std::fmt::Display,
+{
+    // Translators: how a typed date was read, as in "Fri Oct 9, 17:00".
+    format_date(t, tr!("date format" => "%a %b %-d, %H:%M"))
 }
 
 /// "in 25 min", "in 3 h", "in 2 days", "4 min ago", "now".
@@ -171,17 +279,56 @@ pub fn relative(delta_secs: i64) -> String {
     let future = delta_secs >= 0;
     let s = delta_secs.unsigned_abs();
     let body = if s < 60 {
-        return "now".into();
+        return tr!("now").to_owned();
     } else if s < 3600 {
-        format!("{} min", s / 60)
+        tr!("{} min", s / 60)
     } else if s < 48 * 3600 {
         let h = s / 3600;
         let m = (s % 3600) / 60;
-        if h < 10 && m != 0 { format!("{h} h {m} min") } else { format!("{h} h") }
+        if h < 10 && m != 0 {
+            tr!("{} h {} min", h, m)
+        } else {
+            tr!("{} h", h)
+        }
     } else {
-        format!("{} days", s / 86_400)
+        trn!("{} day", "{} days", s / 86_400)
     };
-    if future { format!("in {body}") } else { format!("{body} ago") }
+    if future {
+        tr!("in {}", body)
+    } else {
+        tr!("{} ago", body)
+    }
+}
+
+/// How long ago something happened, in steps the UI words differently.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Age {
+    JustNow,
+    Minutes(i64),
+    /// Earlier today.
+    Hours(i64),
+    Yesterday,
+    /// Before yesterday: the day ("Oct 3").
+    On(String),
+}
+
+pub fn age<Tz: TimeZone>(t: &DateTime<Tz>, now: &DateTime<Tz>) -> Age
+where
+    Tz::Offset: std::fmt::Display,
+{
+    let secs = (now.clone() - t.clone()).num_seconds();
+    let days = (now.date_naive() - t.date_naive()).num_days();
+    if secs < 60 {
+        Age::JustNow
+    } else if secs < 3600 {
+        Age::Minutes(secs / 60)
+    } else if days == 0 {
+        Age::Hours(secs / 3600)
+    } else if days == 1 {
+        Age::Yesterday
+    } else {
+        Age::On(short_date(t, now))
+    }
 }
 
 /// How long ago something was written: "just now", "12 min ago", "3 h ago", "Yesterday", "Oct 3".
@@ -189,33 +336,27 @@ pub fn age_label<Tz: TimeZone>(t: &DateTime<Tz>, now: &DateTime<Tz>) -> String
 where
     Tz::Offset: std::fmt::Display,
 {
-    let secs = (now.clone() - t.clone()).num_seconds();
-    let days = (now.date_naive() - t.date_naive()).num_days();
-    if secs < 60 {
-        "just now".into()
-    } else if secs < 3600 {
-        format!("{} min ago", secs / 60)
-    } else if days == 0 {
-        format!("{} h ago", secs / 3600)
-    } else if days == 1 {
-        "Yesterday".into()
-    } else if t.year() == now.year() {
-        t.format("%b %-d").to_string()
-    } else {
-        t.format("%b %-d %Y").to_string()
+    match age(t, now) {
+        Age::JustNow => tr!("just now").to_owned(),
+        Age::Minutes(m) => tr!("{} min ago", m),
+        Age::Hours(h) => tr!("{} h ago", h),
+        Age::Yesterday => tr!("Yesterday").to_owned(),
+        Age::On(day) => day,
     }
 }
 
-/// Reads a reminder offset: "15", "15m", "2h", "1h30m", "1 day", "90 min".
+/// Reads a reminder offset: "15", "15m", "2h", "1h30m", "1 day", "90 min", "2小时", "2 часа".
 pub fn parse_minutes(input: &str) -> Option<i64> {
-    let compact: String = input.trim().to_lowercase().split_whitespace().collect();
+    let text = input.trim().to_lowercase();
+    let compact: String = text.split_whitespace().collect();
     if compact.is_empty() {
         return None;
     }
     if let Ok(m) = compact.parse::<i64>() {
         return (m >= 0).then_some(m);
     }
-    compound_duration(&normalize_cjk(&compact).replace(' ', ""))
+    let normalized = words::normalize(&words::amount_units(&text), i18n::current().code);
+    compound_duration(&normalized.split_whitespace().collect::<String>())
 }
 
 /// Writes minutes back the way `parse_minutes` reads them: "15m", "2h", "1h 30m", "1d", "1d 2h".
@@ -229,9 +370,9 @@ pub fn format_minutes(minutes: i64) -> String {
     if parts.is_empty() { "0m".into() } else { parts.join(" ") }
 }
 
-/// Reads a time of day: "9", "09:00", "9am", "9:30 pm", "21:30", "下午3点".
+/// Reads a time of day: "9", "09:00", "9am", "9:30 pm", "21:30", "下午3点", "15h".
 pub fn parse_clock(input: &str) -> Option<NaiveTime> {
-    let normalized = normalize_cjk(&input.trim().to_lowercase());
+    let normalized = words::normalize(&input.trim().to_lowercase(), i18n::current().code);
     let tokens: Vec<&str> = normalized.split_whitespace().collect();
     let mut prefix = None;
     let mut rest = &tokens[..];
@@ -449,7 +590,7 @@ fn upcoming_month_day(today: NaiveDate, month: u32, day: u32) -> Result<NaiveDat
         (Some(d), _) if d >= today => Ok(d),
         (_, Some(d)) => Ok(d),
         (Some(d), None) => Ok(d),
-        (None, None) => Err(format!("There's no day {month}-{day}.")),
+        (None, None) => Err(tr!("There's no day {}-{}.", month, day)),
     }
 }
 
@@ -461,126 +602,11 @@ fn upcoming_day_of_month(today: NaiveDate, day: u32) -> Result<NaiveDate, String
             first.with_day(day)
         })
         .find(|d| *d >= today)
-        .ok_or_else(|| format!("There's no day {day} coming up."))
+        .ok_or_else(|| tr!("There's no day {} coming up.", day))
 }
 
 fn add_months(d: NaiveDate, months: u32) -> NaiveDate {
     d.checked_add_months(chrono::Months::new(months)).unwrap_or(d)
-}
-
-/// Rewrites common Chinese date words into the English tokens the parser knows:
-/// 明天下午3点半 → " tomorrow  pm-prefix 3:30 ".
-fn normalize_cjk(s: &str) -> String {
-    if s.is_ascii() {
-        return s.to_owned();
-    }
-    const WEEKDAYS: [(&str, &str); 8] = [
-        ("一", "mon"),
-        ("二", "tue"),
-        ("三", "wed"),
-        ("四", "thu"),
-        ("五", "fri"),
-        ("六", "sat"),
-        ("日", "sun"),
-        ("天", "sun"),
-    ];
-    const WORDS: &[(&str, &str)] = &[
-        ("大后天", " +3d "),
-        ("后天", " overmorrow "),
-        ("明天", " tomorrow "),
-        ("明早", " tomorrow am-prefix "),
-        ("明晚", " tomorrow pm-prefix "),
-        ("今天", " today "),
-        ("今晚", " tonight pm-prefix "),
-        ("昨天", " yesterday "),
-        ("下个月", " next month "),
-        ("下周", " next week "),
-        ("下星期", " next week "),
-        ("凌晨", " am-prefix "),
-        ("早上", " am-prefix "),
-        ("上午", " am-prefix "),
-        ("中午", " noon-prefix "),
-        ("下午", " pm-prefix "),
-        ("傍晚", " pm-prefix "),
-        ("晚上", " pm-prefix "),
-        ("分钟后", " minutes "),
-        ("分钟", " minutes "),
-        ("小时后", " hours "),
-        ("小时", " hours "),
-        ("天后", " days "),
-        ("现在", " now "),
-    ];
-
-    let mut out = s.to_owned();
-    // Weekdays first, so "下周一" isn't split up by the "下周" (next week) rule.
-    for (prefix, next) in [("下周", true), ("下星期", true), ("下礼拜", true), ("星期", false), ("礼拜", false), ("周", false)] {
-        for (zh, en) in WEEKDAYS {
-            let replacement = if next { format!(" next {en} ") } else { format!(" {en} ") };
-            out = out.replace(&format!("{prefix}{zh}"), &replacement);
-        }
-    }
-    for (zh, en) in WORDS {
-        out = out.replace(zh, en);
-    }
-
-    // Numeric patterns: 10月12日 / 10月12号 → 10-12, 3点半 → 3:30, 3点15(分) → 3:15, 3点 → 3:00.
-    let chars: Vec<char> = out.chars().collect();
-    let mut result = String::with_capacity(out.len());
-    let mut i = 0;
-    let read_num = |from: usize| -> (String, usize) {
-        let mut j = from;
-        let mut n = String::new();
-        while j < chars.len() && chars[j].is_ascii_digit() {
-            n.push(chars[j]);
-            j += 1;
-        }
-        (n, j)
-    };
-    while i < chars.len() {
-        if !chars[i].is_ascii_digit() {
-            result.push(chars[i]);
-            i += 1;
-            continue;
-        }
-        let (n, j) = read_num(i);
-        match chars.get(j) {
-            Some('月') => {
-                let (d, k) = read_num(j + 1);
-                if !d.is_empty() && matches!(chars.get(k), Some('日' | '号')) {
-                    result.push_str(&format!(" {n}-{d} "));
-                    i = k + 1;
-                } else {
-                    result.push_str(&n);
-                    i = j;
-                }
-            }
-            Some('点' | '时') => {
-                if chars.get(j + 1) == Some(&'半') {
-                    result.push_str(&format!(" {n}:30 "));
-                    i = j + 2;
-                } else {
-                    let (m, k) = read_num(j + 1);
-                    if m.is_empty() {
-                        result.push_str(&format!(" {n}:00 "));
-                        i = j + 1;
-                    } else {
-                        result.push_str(&format!(" {n}:{m:0>2} "));
-                        i = if chars.get(k) == Some(&'分') { k + 1 } else { k };
-                    }
-                }
-            }
-            Some('号' | '日') => {
-                // "12号": the coming 12th.
-                result.push_str(&format!(" day{n} "));
-                i = j + 1;
-            }
-            _ => {
-                result.push_str(&n);
-                i = j;
-            }
-        }
-    }
-    result
 }
 
 #[cfg(test)]

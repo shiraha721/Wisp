@@ -17,6 +17,8 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 dirs = "7"
 png = "0.18"
+# The system language, for the "Match system" language setting (Slint uses it too).
+sys-locale = "0.3"
 
 # On Linux only the X11 flavour of winit is built: a launcher needs to position and
 # focus its own window and grab a global key, none of which Wayland clients may do.

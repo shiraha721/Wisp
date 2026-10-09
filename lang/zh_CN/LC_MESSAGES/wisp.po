@@ -1,0 +1,1553 @@
+# Chinese (Simplified) translation of Wisp.
+msgid ""
+msgstr ""
+"Project-Id-Version: Wisp\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: src/app/editor.rs
+msgid "Written just now"
+msgstr "刚刚写下"
+
+#: src/app/editor.rs
+msgid "Written {} min ago"
+msgstr "{} 分钟前写下"
+
+#: src/app/editor.rs
+msgid "Written {} h ago"
+msgstr "{} 小时前写下"
+
+#: src/app/editor.rs
+msgid "Written yesterday"
+msgstr "昨天写下"
+
+#: src/app/editor.rs
+msgid "Written on {}"
+msgstr "写于 {}"
+
+#: src/app.rs src/app/editor.rs ui/launcher.slint
+msgid "Done"
+msgstr "已完成"
+
+#: src/app.rs src/app/editor.rs ui/launcher.slint
+msgid "Notes"
+msgstr "笔记"
+
+#: src/app/editor.rs
+msgid "Due is before the start"
+msgstr "截止时间早于开始时间"
+
+#: src/app/editor.rs
+msgid "Needs a start time, or it's dropped"
+msgstr "需要开始时间，否则会被去掉"
+
+#: src/app/editor.rs
+msgid "Needs a due time, or it's dropped"
+msgstr "需要截止时间，否则会被去掉"
+
+#: src/app/editor.rs
+msgid "Already passed"
+msgstr "已经过去"
+
+#: src/app/editor.rs
+msgid "Reminder removed."
+msgstr "已删除提醒。"
+
+#: src/app/editor.rs
+msgid "This note has no reminders."
+msgstr "这条笔记没有提醒。"
+
+#: src/app/editor.rs
+msgid "Reminders ring relative to the start or due time. Add one of those first."
+msgstr "提醒以开始或截止时间为准。请先填写其中一个。"
+
+#: src/app/editor.rs
+msgid "The old start time was kept."
+msgstr "已保留原来的开始时间。"
+
+#: src/app/editor.rs
+msgid "Starts: {} Fix it, or press Esc again to keep the old time."
+msgstr "开始：{} 请修改，或再按一次 Esc 保留原来的时间。"
+
+#: src/app/editor.rs
+msgid "The old due time was kept."
+msgstr "已保留原来的截止时间。"
+
+#: src/app/editor.rs
+msgid "Due: {} Fix it, or press Esc again to keep the old time."
+msgstr "截止：{} 请修改，或再按一次 Esc 保留原来的时间。"
+
+#: src/app/editor.rs
+msgid "The due time is before the start. Fix it, or press Esc again to save it anyway."
+msgstr "截止时间早于开始时间。请修改，或再按一次 Esc 照样保存。"
+
+#: src/app/editor.rs
+msgid "Reminder: {} Fix it, or press Esc again to drop it."
+msgstr "提醒：{} 请修改，或再按一次 Esc 放弃它。"
+
+#: src/app/editor.rs
+msgid "A reminder with no start or due time to follow was left out."
+msgid_plural "{} reminders with no start or due time to follow were left out."
+msgstr[0] "已去掉 {} 个没有开始或截止时间可依据的提醒。"
+
+#: src/app/editor.rs
+msgid "Saved."
+msgstr "已保存。"
+
+#: src/app/editor.rs
+msgid "start time"
+msgstr "开始时间"
+
+#: src/app/settings.rs
+msgid "General"
+msgstr "常规"
+
+#: src/app/settings.rs
+msgid "How Wisp starts, and how its window behaves."
+msgstr "Wisp 如何启动，窗口如何表现。"
+
+#: src/app.rs src/app/settings.rs
+msgid "Categories"
+msgstr "分类"
+
+#: src/app/settings.rs
+msgid "Lists like Daily, Work or School. In Wisp, type #name to file a note in one or to see only that one."
+msgstr "像“日常”“工作”“学习”这样的列表。在 Wisp 中输入 #名称，即可把笔记放进去，或只看这一类。"
+
+#: src/app/settings.rs
+msgid "Hotkeys"
+msgstr "快捷键"
+
+#: src/app/settings.rs
+msgid "Every key Wisp listens to. Select one, press Enter, then press the new combination."
+msgstr "Wisp 响应的所有按键。选中一个，按 Enter，再按新的组合键。"
+
+#: src/app/settings.rs
+msgid "Appearance"
+msgstr "外观"
+
+#: src/app/settings.rs
+msgid "Light, dark, or whatever your system uses."
+msgstr "浅色、深色，或跟随系统。"
+
+#: src/app/settings.rs
+msgid "Language"
+msgstr "语言"
+
+#: src/app/settings.rs
+msgid "The language of Wisp's windows, and of the dates you type besides English."
+msgstr "Wisp 窗口的语言，以及除英语外可输入的日期语言。"
+
+#: src/app/settings.rs
+msgid "About"
+msgstr "关于"
+
+#: src/app/settings.rs
+msgid "The version you're running and where your notes are kept."
+msgstr "当前版本，以及笔记的存放位置。"
+
+#: src/app/settings.rs
+msgid "Start with Windows"
+msgstr "随 Windows 启动"
+
+#: src/app/settings.rs
+msgid "Open at login"
+msgstr "登录时打开"
+
+#: src/app/settings.rs
+msgid "Start when you log in"
+msgstr "登录时启动"
+
+#: src/app/settings.rs
+msgid "Startup"
+msgstr "启动"
+
+#: src/app/settings.rs
+msgid "Window"
+msgstr "窗口"
+
+#: src/app/settings.rs ui/launcher.slint
+msgid "Reminders"
+msgstr "提醒"
+
+#: src/app.rs src/app/settings.rs
+msgid "Anywhere"
+msgstr "全局"
+
+#: src/app/settings.rs
+msgid "Defaults"
+msgstr "默认"
+
+#: src/app/settings.rs
+msgid "Version {}"
+msgstr "版本 {}"
+
+#: src/app/settings.rs
+msgid "Wisp waits in the tray, ready for your hotkey"
+msgstr "Wisp 在托盘中待命，随时响应你的快捷键"
+
+#: src/app/settings.rs
+msgid "Hide when I click elsewhere"
+msgstr "点击别处时隐藏"
+
+#: src/app/settings.rs
+msgid "Like a launcher: the window gets out of the way when you switch apps"
+msgstr "像启动器一样：切换到其他应用时窗口自动让开"
+
+#: src/app/settings.rs
+msgid "Open Wisp when a reminder rings"
+msgstr "提醒响起时打开 Wisp"
+
+#: src/app/settings.rs
+msgid "Shows the window as well as the system notification"
+msgstr "除系统通知外，同时显示窗口"
+
+#: src/app/settings.rs
+msgid "No notes yet"
+msgstr "还没有笔记"
+
+#: src/app/settings.rs
+msgid "{} open"
+msgstr "{} 条进行中"
+
+#: src/app/settings.rs
+msgid "{} done"
+msgstr "{} 条已完成"
+
+#: src/app/settings.rs
+msgid "{} open, {} done"
+msgstr "{} 条进行中，{} 条已完成"
+
+#: src/app/settings.rs
+msgid "Enter adds it, Esc cancels"
+msgstr "Enter 添加，Esc 取消"
+
+#: src/app/settings.rs
+msgid "Add a category"
+msgstr "添加分类"
+
+#: src/app/settings.rs
+msgid "Then file notes with #name, or with {} on a note"
+msgstr "之后用 #名称 归类笔记，或在笔记上按 {}"
+
+#: src/app/settings.rs
+msgid "Add"
+msgstr "添加"
+
+#: src/app/settings.rs
+msgid "On Wayland, also bind “wisp --toggle” to a key in your system settings"
+msgstr "在 Wayland 下，还需在系统设置里把 “wisp --toggle” 绑定到一个按键"
+
+#: src/app/settings.rs
+msgid "Works in every app. Press it again to hide Wisp."
+msgstr "在任何应用中都有效。再按一次隐藏 Wisp。"
+
+#: src/app/settings.rs src/config.rs
+msgid "Open Wisp from anywhere"
+msgstr "随时随地打开 Wisp"
+
+#: src/app/settings.rs
+msgid "{} (default: {})"
+msgstr "{}（默认：{}）"
+
+#: src/app/settings.rs
+msgid "Reset all shortcuts"
+msgstr "重置所有快捷键"
+
+#: src/app/settings.rs
+msgid "Puts every key, including the one that opens Wisp, back to its default"
+msgstr "把所有按键（包括打开 Wisp 的那个）恢复为默认"
+
+#: src/app/settings.rs
+msgid "Reset"
+msgstr "重置"
+
+#: src/app/settings.rs
+msgid "Theme"
+msgstr "主题"
+
+#: src/app/settings.rs
+msgid "Applies to the launcher and this window"
+msgstr "同时作用于启动器和本窗口"
+
+#: src/app/settings.rs ui/settings.slint
+msgid "Match system"
+msgstr "跟随系统"
+
+#: src/app/settings.rs
+msgid "Follows your system's language ({} right now)"
+msgstr "跟随系统语言（当前为 {}）"
+
+#: src/app/settings.rs
+msgid "A keyboard-first catcher for ideas, memos and to-dos"
+msgstr "用键盘快速记下想法、备忘和待办"
+
+#: src/app/settings.rs
+msgid "Notes folder (next to Wisp)"
+msgstr "笔记文件夹（在 Wisp 旁边）"
+
+#: src/app/settings.rs
+msgid "Notes folder"
+msgstr "笔记文件夹"
+
+#: src/app/settings.rs
+msgid "Open folder"
+msgstr "打开文件夹"
+
+#: src/app/settings.rs
+msgid "Every shortcut is back to its default."
+msgstr "所有快捷键已恢复默认。"
+
+#: src/app/settings.rs
+msgid "{} is taken by “{}”"
+msgstr "{} 已被“{}”占用"
+
+#: src/app/settings.rs
+msgid "{} is back to {}."
+msgstr "{} 已恢复为 {}。"
+
+#: src/app/settings.rs
+msgid "Press Delete again to remove it."
+msgstr "再按一次 Delete 删除它。"
+
+#: src/app/settings.rs
+msgid "Press Delete again to remove it. Its notes stay, without a category."
+msgstr "再按一次 Delete 删除它。其中的笔记会保留，但不再属于任何分类。"
+
+#: src/app/settings.rs
+msgid "Click the bin again to remove it."
+msgstr "再点一次垃圾桶删除它。"
+
+#: src/app/settings.rs
+msgid "Click the bin again to remove it. Its notes stay, without a category."
+msgstr "再点一次垃圾桶删除它。其中的笔记会保留，但不再属于任何分类。"
+
+#: src/app/settings.rs
+msgid "Removed “{}”."
+msgstr "已删除“{}”。"
+
+#: src/app/settings.rs
+msgid "Saved: {}"
+msgstr "已保存：{}"
+
+#: src/app/settings.rs
+msgid "{} now opens Wisp from anywhere."
+msgstr "现在可用 {} 随时随地打开 Wisp。"
+
+#: src/app/settings.rs
+msgid "Couldn't change it: {}"
+msgstr "无法更改：{}"
+
+#: src/app.rs
+msgid "Daily"
+msgstr "日常"
+
+#: src/app.rs
+msgid "Work"
+msgstr "工作"
+
+#: src/app.rs
+msgid "School"
+msgstr "学习"
+
+#: src/app.rs
+msgid "System-wide keys aren't available here ({})."
+msgstr "这里无法使用全局快捷键（{}）。"
+
+#: src/app.rs
+msgid "{} Change it in Settings ({})."
+msgstr "{} 可在设置中更改（{}）。"
+
+#: src/app.rs
+msgid "{} Pick another key in Settings ({})."
+msgstr "{} 请在设置中换一个按键（{}）。"
+
+#: src/app.rs
+msgid "Your notes now live next to Wisp, in {}"
+msgstr "你的笔记现在放在 Wisp 旁边：{}"
+
+#: src/app.rs
+msgid "Couldn't save notes: {}"
+msgstr "无法保存笔记：{}"
+
+#: src/app.rs
+msgid "Couldn't save settings: {}"
+msgstr "无法保存设置：{}"
+
+#: src/app.rs
+msgid "Type a note first, then add its dates."
+msgstr "请先写一条笔记，再添加日期。"
+
+#: src/app.rs
+msgid "Pick a note with ↓ first."
+msgstr "请先用 ↓ 选中一条笔记。"
+
+#: src/app.rs
+msgid "Open a note (Enter) to change its reminders."
+msgstr "打开笔记（Enter）即可修改提醒。"
+
+#: src/app.rs
+msgid "Saved to {}. {} takes it back."
+msgstr "已保存到 {}。按 {} 撤销。"
+
+#: src/app.rs
+msgid "Saved. {} takes it back."
+msgstr "已保存。按 {} 撤销。"
+
+#: src/app.rs
+msgid "There are no categories yet. Add some in Settings ({})."
+msgstr "还没有分类。请在设置中添加（{}）。"
+
+#: src/app.rs
+msgid "Moved to {}."
+msgstr "已移到 {}。"
+
+#: src/app.rs
+msgid "Took it out of its category."
+msgstr "已移出分类。"
+
+#: src/app.rs
+msgid "Back in your notes."
+msgstr "已放回笔记。"
+
+#: src/app.rs
+msgid "Done, and moved to the Done list. {} to undo."
+msgstr "已完成，并移到“已完成”列表。按 {} 撤销。"
+
+#: src/app.rs
+msgid "Deleted. {} brings it back."
+msgstr "已删除。按 {} 恢复。"
+
+#: src/app.rs
+msgid "Nothing to undo."
+msgstr "没有可撤销的操作。"
+
+#: src/app.rs
+msgid "Unsaved. The text is back in the box."
+msgstr "已撤销保存，文字回到了输入框。"
+
+#: src/app.rs
+msgid "Restored."
+msgstr "已恢复。"
+
+#: src/app.rs
+msgid "Undone."
+msgstr "已撤销。"
+
+#: src/app.rs
+msgid "Done today"
+msgstr "今天完成"
+
+#: src/app.rs
+msgid "Done yesterday"
+msgstr "昨天完成"
+
+#: src/app.rs
+msgid "Done {}"
+msgstr "{} 完成"
+
+#: src/app.rs
+msgid "Scheduled"
+msgstr "已安排"
+
+#: src/app.rs
+msgid "Starts {}"
+msgstr "开始于 {}"
+
+#: src/app.rs
+msgid "Started {}"
+msgstr "已于 {} 开始"
+
+#: src/app.rs
+msgid "Due {}"
+msgstr "截止于 {}"
+
+#: src/app.rs
+msgid "{} of {} match"
+msgstr "{} / {} 条匹配"
+
+#: src/app.rs
+msgid "Nothing in {} yet"
+msgstr "“{}”里还没有内容"
+
+#: src/app.rs
+msgid "Type a note and press Enter to file it here."
+msgstr "写一条笔记并按 Enter，就会放到这里。"
+
+#: src/app.rs
+msgid "Nothing done in {} yet"
+msgstr "“{}”里还没有已完成的"
+
+#: src/app.rs
+msgid "Nothing written yet"
+msgstr "还什么都没写"
+
+#: src/app.rs
+msgid "Type above and press Enter. {} opens Wisp from any app."
+msgstr "在上方输入并按 Enter。在任何应用中按 {} 都能打开 Wisp。"
+
+#: src/app.rs
+msgid "All clear"
+msgstr "全部完成"
+
+#: src/app.rs
+msgid "Notes you mark done wait in the Done tab."
+msgstr "标记为完成的笔记会放在“已完成”标签页。"
+
+#: src/app.rs
+msgid "Press Enter to save it"
+msgstr "按 Enter 保存"
+
+#: src/app.rs
+msgid "No notes match"
+msgstr "没有匹配的笔记"
+
+#: src/app.rs
+msgid "Press Enter to save this as a new note in {}."
+msgstr "按 Enter 将其保存为“{}”中的新笔记。"
+
+#: src/app.rs
+msgid "Press Enter to save this as a new note."
+msgstr "按 Enter 将其保存为新笔记。"
+
+#: src/app.rs
+msgid "Nothing done yet"
+msgstr "还没有已完成的"
+
+#: src/app.rs
+msgid "Mark a note done with {} and it moves here."
+msgstr "用 {} 把笔记标记为完成，它就会出现在这里。"
+
+#: src/app.rs
+msgid "Nothing done matches"
+msgstr "没有匹配的已完成笔记"
+
+#: src/app.rs
+msgid "Reminder: {}"
+msgstr "提醒：{}"
+
+#: src/app.rs
+msgid "{} is taken by another program, so Wisp opens with {} for now."
+msgstr "{} 已被其他程序占用，Wisp 暂时改用 {} 打开。"
+
+#: src/app.rs
+msgid "System-wide keys aren't available here."
+msgstr "这里无法使用全局快捷键。"
+
+#: src/app.rs
+msgid "Couldn't claim {} ({}). Another app may use it."
+msgstr "无法注册 {}（{}）。可能被其他应用占用。"
+
+#. Dates Wisp must read in your language (the tests check). Separate several with commas. Words for dates are in src/dates/words.rs.
+#: src/app.rs
+msgctxt "date example"
+msgid "tomorrow 9am"
+msgstr "明天上午9点"
+
+#: src/app.rs
+msgid "Day and time"
+msgstr "日期和时间"
+
+#. Dates Wisp must read in your language (the tests check). Separate several with commas. Words for dates are in src/dates/words.rs.
+#: src/app.rs
+msgctxt "date example"
+msgid "fri 17:00"
+msgstr "周五 17:00"
+
+#: src/app.rs
+msgid "This coming Friday"
+msgstr "这个周五"
+
+#. Dates Wisp must read in your language (the tests check). Separate several with commas. Words for dates are in src/dates/words.rs.
+#: src/app.rs
+msgctxt "date example"
+msgid "next mon"
+msgstr "下周一"
+
+#: src/app.rs
+msgid "Monday next week"
+msgstr "下周的周一"
+
+#. Dates Wisp must read in your language (the tests check). Separate several with commas. Words for dates are in src/dates/words.rs.
+#: src/app.rs
+msgctxt "date example"
+msgid "in 2 hours"
+msgstr "2小时后"
+
+#: src/app.rs
+msgid "From now (+30m, +2h and +1d work too)"
+msgstr "从现在起算（也可以用 +30m、+2h、+1d）"
+
+#. Dates Wisp must read in your language (the tests check). Separate several with commas. Words for dates are in src/dates/words.rs.
+#: src/app.rs
+msgctxt "date example"
+msgid "10-20 14:00"
+msgstr "10月20日 14:00"
+
+#: src/app.rs
+msgid "Month and day"
+msgstr "月和日"
+
+#: src/app.rs
+msgid "Any date"
+msgstr "任意日期"
+
+#: src/app.rs
+msgid "English works too"
+msgstr "也可以用英文"
+
+#: src/app.rs
+msgid "Open or hide Wisp"
+msgstr "打开或隐藏 Wisp"
+
+#: src/app.rs src/config.rs
+msgid "Writing"
+msgstr "输入"
+
+#: src/app.rs
+msgid "Save the note"
+msgstr "保存笔记"
+
+#: src/app.rs
+msgid "New line (lines after the first become its notes)"
+msgstr "换行（第一行之后的内容成为详情）"
+
+#: src/app.rs
+msgid "Save, then add dates and reminders"
+msgstr "保存，然后添加日期和提醒"
+
+#: src/app.rs
+msgid "Hide Wisp (what you typed stays)"
+msgstr "隐藏 Wisp（已输入的内容会保留）"
+
+#: src/app.rs src/config.rs
+msgid "Your notes"
+msgstr "笔记列表"
+
+#: src/app.rs
+msgid "Move through notes"
+msgstr "在笔记间移动"
+
+#: src/app.rs
+msgid "Next or previous note, round and round"
+msgstr "下一条或上一条，到头后循环"
+
+#: src/app.rs src/config.rs
+msgid "Open the selected note"
+msgstr "打开选中的笔记"
+
+#: src/app.rs
+msgid "Mark done (or bring back from Done)"
+msgstr "标记完成（或从“已完成”恢复）"
+
+#: src/app.rs src/config.rs ui/launcher.slint
+msgid "Delete"
+msgstr "删除"
+
+#: src/app.rs
+msgid "Undo the last change"
+msgstr "撤销上一步更改"
+
+#: src/app.rs
+msgid "Notes tab"
+msgstr "“笔记”标签页"
+
+#: src/app.rs
+msgid "Done tab"
+msgstr "“已完成”标签页"
+
+#: src/app.rs
+msgid "Back to typing"
+msgstr "回到输入"
+
+#: src/app.rs
+msgid "#name"
+msgstr "#名称"
+
+#: src/app.rs
+msgid "Typed in the box: shows only that category, and files the note there"
+msgstr "在输入框中：只显示该分类，并把笔记放进去"
+
+#: src/app.rs
+msgid "Next category for the selected note, or for what you're typing"
+msgstr "为选中的笔记或正在输入的内容切换到下一个分类"
+
+#: src/app.rs
+msgid "Previous category"
+msgstr "上一个分类"
+
+#: src/app.rs src/config.rs
+msgid "Editing a note"
+msgstr "编辑笔记"
+
+#: src/app.rs
+msgid "From the title, go to the notes"
+msgstr "从标题跳到详情"
+
+#: src/app.rs ui/launcher.slint
+msgid "Next field"
+msgstr "下一项"
+
+#: src/app.rs
+msgid "Save and close (twice: keep what's valid)"
+msgstr "保存并关闭（按两次：保留有效内容）"
+
+#: src/app.rs src/config.rs ui/launcher.slint
+msgid "Add a reminder"
+msgstr "添加提醒"
+
+#: src/app.rs
+msgid "Change the selected reminder"
+msgstr "修改选中的提醒"
+
+#: src/app.rs
+msgid "Remove the selected reminder"
+msgstr "删除选中的提醒"
+
+#: src/app.rs
+msgid "Remove a reminder from anywhere"
+msgstr "在任意位置删除提醒"
+
+#: src/app.rs
+msgid "Dates you can type"
+msgstr "可输入的日期"
+
+#: src/app.rs src/config.rs
+msgid "Wisp"
+msgstr "Wisp"
+
+#: src/app.rs ui/app.slint ui/launcher.slint ui/settings.slint
+msgid "Settings"
+msgstr "设置"
+
+#: src/app.rs
+msgid "This list"
+msgstr "本列表"
+
+#: src/app.rs
+msgid "Quit"
+msgstr "退出"
+
+#: src/config.rs
+msgid "Save and add dates"
+msgstr "保存并添加日期"
+
+#: src/config.rs
+msgid "Saves what you typed and opens its start, due time and reminders"
+msgstr "保存输入内容，并打开其开始时间、截止时间和提醒"
+
+#: src/config.rs
+msgid "Enter does the same"
+msgstr "Enter 效果相同"
+
+#: src/config.rs
+msgid "Mark done / bring back"
+msgstr "标记完成 / 恢复"
+
+#: src/config.rs
+msgid "Done notes move to the Done list instead of being deleted"
+msgstr "完成的笔记会移到“已完成”列表，而不是被删除"
+
+#: src/config.rs ui/launcher.slint
+msgid "Change category"
+msgstr "更改分类"
+
+#: src/config.rs
+msgid "Of the selected note, the note you're editing, or what you're typing. Add Shift to go back"
+msgstr "作用于选中的笔记、正在编辑的笔记或正在输入的内容。加 Shift 反向切换"
+
+#: src/config.rs
+msgid "Removes the note; Undo brings it back"
+msgstr "删除笔记；撤销可恢复"
+
+#: src/config.rs
+msgid "Undo"
+msgstr "撤销"
+
+#: src/config.rs
+msgid "Reverts the last change to your notes"
+msgstr "撤销对笔记的最后一次更改"
+
+#: src/config.rs
+msgid "Reminders follow the start or due time, so set one of those first"
+msgstr "提醒依据开始或截止时间，请先设置其中一个"
+
+#: src/config.rs
+msgid "Remove a reminder"
+msgstr "删除提醒"
+
+#: src/config.rs
+msgid "Removes the reminder you're on, or the last one"
+msgstr "删除当前所在的提醒，或最后一个提醒"
+
+#: src/config.rs
+msgid "Moving around"
+msgstr "导航"
+
+#: src/config.rs
+msgid "Show notes"
+msgstr "显示笔记"
+
+#: src/config.rs
+msgid "Your open notes and to-dos"
+msgstr "未完成的笔记和待办"
+
+#: src/config.rs
+msgid "Show done"
+msgstr "显示已完成"
+
+#: src/config.rs
+msgid "Everything you've marked done"
+msgstr "所有标记为完成的内容"
+
+#: src/config.rs ui/launcher.slint
+msgid "Keyboard shortcuts"
+msgstr "键盘快捷键"
+
+#: src/config.rs
+msgid "Lists every key in the Wisp window"
+msgstr "列出 Wisp 窗口中的所有按键"
+
+#: src/config.rs
+msgid "Open settings"
+msgstr "打开设置"
+
+#: src/config.rs
+msgid "This window"
+msgstr "本窗口"
+
+#: src/config.rs ui/app.slint
+msgid "Quit Wisp"
+msgstr "退出 Wisp"
+
+#: src/config.rs
+msgid "Closes Wisp completely; the hotkey stops working until it starts again"
+msgstr "完全关闭 Wisp；再次启动前快捷键不可用"
+
+#: src/config.rs
+msgid "Settings file has an error ({}); using defaults."
+msgstr "设置文件有错误（{}），已使用默认设置。"
+
+#: src/dates.rs
+msgid "“next” what? Try “next fri”."
+msgstr "“下”什么？试试“下周五”。"
+
+#: src/dates.rs
+msgid "Couldn't read “next {}”."
+msgstr "无法识别“下{}”。"
+
+#: src/dates.rs
+msgid "“in” how long? Try “in 30m”."
+msgstr "多久以后？试试“30分钟后”。"
+
+#: src/dates.rs
+msgid "Couldn't read “in {}”."
+msgstr "无法识别“{}后”。"
+
+#: src/dates.rs
+msgid "Which day of {}?"
+msgstr "{} 的哪一天？"
+
+#: src/dates.rs
+msgid "Couldn't read “{}”."
+msgstr "无法识别“{}”。"
+
+#: src/dates.rs
+msgid "Add a day or a time, like “tomorrow 9am”."
+msgstr "请输入日期或时间，例如“明天上午9点”。"
+
+#. A short weekday name, as in “Fri 17:00”.
+#: src/dates.rs
+msgctxt "weekday"
+msgid "Mon"
+msgstr "周一"
+
+#. A short weekday name, as in “Fri 17:00”.
+#: src/dates.rs
+msgctxt "weekday"
+msgid "Tue"
+msgstr "周二"
+
+#. A short weekday name, as in “Fri 17:00”.
+#: src/dates.rs
+msgctxt "weekday"
+msgid "Wed"
+msgstr "周三"
+
+#. A short weekday name, as in “Fri 17:00”.
+#: src/dates.rs
+msgctxt "weekday"
+msgid "Thu"
+msgstr "周四"
+
+#. A short weekday name, as in “Fri 17:00”.
+#: src/dates.rs
+msgctxt "weekday"
+msgid "Fri"
+msgstr "周五"
+
+#. A short weekday name, as in “Fri 17:00”.
+#: src/dates.rs
+msgctxt "weekday"
+msgid "Sat"
+msgstr "周六"
+
+#. A short weekday name, as in “Fri 17:00”.
+#: src/dates.rs
+msgctxt "weekday"
+msgid "Sun"
+msgstr "周日"
+
+#. A short month name, as in “Oct 12”. Use the form a date takes, if your language changes it.
+#: src/dates.rs
+msgctxt "month"
+msgid "Jan"
+msgstr "1月"
+
+#. A short month name, as in “Oct 12”. Use the form a date takes, if your language changes it.
+#: src/dates.rs
+msgctxt "month"
+msgid "Feb"
+msgstr "2月"
+
+#. A short month name, as in “Oct 12”. Use the form a date takes, if your language changes it.
+#: src/dates.rs
+msgctxt "month"
+msgid "Mar"
+msgstr "3月"
+
+#. A short month name, as in “Oct 12”. Use the form a date takes, if your language changes it.
+#: src/dates.rs
+msgctxt "month"
+msgid "Apr"
+msgstr "4月"
+
+#. A short month name, as in “Oct 12”. Use the form a date takes, if your language changes it.
+#: src/dates.rs
+msgctxt "month"
+msgid "May"
+msgstr "5月"
+
+#. A short month name, as in “Oct 12”. Use the form a date takes, if your language changes it.
+#: src/dates.rs
+msgctxt "month"
+msgid "Jun"
+msgstr "6月"
+
+#. A short month name, as in “Oct 12”. Use the form a date takes, if your language changes it.
+#: src/dates.rs
+msgctxt "month"
+msgid "Jul"
+msgstr "7月"
+
+#. A short month name, as in “Oct 12”. Use the form a date takes, if your language changes it.
+#: src/dates.rs
+msgctxt "month"
+msgid "Aug"
+msgstr "8月"
+
+#. A short month name, as in “Oct 12”. Use the form a date takes, if your language changes it.
+#: src/dates.rs
+msgctxt "month"
+msgid "Sep"
+msgstr "9月"
+
+#. A short month name, as in “Oct 12”. Use the form a date takes, if your language changes it.
+#: src/dates.rs
+msgctxt "month"
+msgid "Oct"
+msgstr "10月"
+
+#. A short month name, as in “Oct 12”. Use the form a date takes, if your language changes it.
+#: src/dates.rs
+msgctxt "month"
+msgid "Nov"
+msgstr "11月"
+
+#. A short month name, as in “Oct 12”. Use the form a date takes, if your language changes it.
+#: src/dates.rs
+msgctxt "month"
+msgid "Dec"
+msgstr "12月"
+
+#: src/dates.rs
+msgid "Today {}"
+msgstr "今天 {}"
+
+#: src/dates.rs
+msgid "today {}"
+msgstr "今天 {}"
+
+#: src/dates.rs
+msgid "Tomorrow {}"
+msgstr "明天 {}"
+
+#: src/dates.rs
+msgid "tomorrow {}"
+msgstr "明天 {}"
+
+#: src/dates.rs
+msgid "Yesterday {}"
+msgstr "昨天 {}"
+
+#: src/dates.rs
+msgid "yesterday {}"
+msgstr "昨天 {}"
+
+#. A chrono date pattern: %a is the weekday and %b the month (both from this catalog), %-d the day, %-m the month as a number, %Y the year, %H:%M the time.
+#. a weekday and a time, as in "Fri 17:00". %a is the weekday, %H:%M the time.
+#: src/dates.rs
+msgctxt "date format"
+msgid "%a %H:%M"
+msgstr "%a %H:%M"
+
+#. A chrono date pattern: %a is the weekday and %b the month (both from this catalog), %-d the day, %-m the month as a number, %Y the year, %H:%M the time.
+#. a date this year and a time, as in "Oct 12 09:00". %b is the month, %-d the day.
+#: src/dates.rs
+msgctxt "date format"
+msgid "%b %-d %H:%M"
+msgstr "%-m月%-d日 %H:%M"
+
+#. A chrono date pattern: %a is the weekday and %b the month (both from this catalog), %-d the day, %-m the month as a number, %Y the year, %H:%M the time.
+#. a date in another year and a time, as in "Jan 3 2027 09:00".
+#: src/dates.rs
+msgctxt "date format"
+msgid "%b %-d %Y %H:%M"
+msgstr "%Y年%-m月%-d日 %H:%M"
+
+#. A chrono date pattern: %a is the weekday and %b the month (both from this catalog), %-d the day, %-m the month as a number, %Y the year, %H:%M the time.
+#. a day this year, as in "Oct 12". %b is the month, %-d the day.
+#: src/dates.rs
+msgctxt "date format"
+msgid "%b %-d"
+msgstr "%-m月%-d日"
+
+#. A chrono date pattern: %a is the weekday and %b the month (both from this catalog), %-d the day, %-m the month as a number, %Y the year, %H:%M the time.
+#. a day in another year, as in "Jan 3 2027".
+#: src/dates.rs
+msgctxt "date format"
+msgid "%b %-d %Y"
+msgstr "%Y年%-m月%-d日"
+
+#. A chrono date pattern: %a is the weekday and %b the month (both from this catalog), %-d the day, %-m the month as a number, %Y the year, %H:%M the time.
+#. the date under the clock, as in "Fri, Oct 9".
+#: src/dates.rs
+msgctxt "date format"
+msgid "%a, %b %-d"
+msgstr "%-m月%-d日 %a"
+
+#. A chrono date pattern: %a is the weekday and %b the month (both from this catalog), %-d the day, %-m the month as a number, %Y the year, %H:%M the time.
+#. how a typed date was read, as in "Fri Oct 9, 17:00".
+#: src/dates.rs
+msgctxt "date format"
+msgid "%a %b %-d, %H:%M"
+msgstr "%-m月%-d日 %a %H:%M"
+
+#: src/dates.rs
+msgid "now"
+msgstr "现在"
+
+#: src/dates.rs
+msgid "{} min"
+msgstr "{} 分钟"
+
+#: src/dates.rs
+msgid "{} h {} min"
+msgstr "{} 小时 {} 分钟"
+
+#: src/dates.rs
+msgid "{} h"
+msgstr "{} 小时"
+
+#: src/dates.rs
+msgid "{} day"
+msgid_plural "{} days"
+msgstr[0] "{} 天"
+
+#: src/dates.rs
+msgid "in {}"
+msgstr "{}后"
+
+#: src/dates.rs
+msgid "{} ago"
+msgstr "{}前"
+
+#: src/dates.rs
+msgid "just now"
+msgstr "刚刚"
+
+#: src/dates.rs
+msgid "{} min ago"
+msgstr "{} 分钟前"
+
+#: src/dates.rs
+msgid "{} h ago"
+msgstr "{} 小时前"
+
+#: src/dates.rs
+msgid "Yesterday"
+msgstr "昨天"
+
+#: src/dates.rs
+msgid "There's no day {}-{}."
+msgstr "没有 {0}月{1}日 这一天。"
+
+#: src/dates.rs
+msgid "There's no day {} coming up."
+msgstr "近期没有 {} 号。"
+
+#: src/i18n.rs
+msgid "English"
+msgstr "英语"
+
+#: src/i18n.rs
+msgid "German"
+msgstr "德语"
+
+#: src/i18n.rs
+msgid "Spanish"
+msgstr "西班牙语"
+
+#: src/i18n.rs
+msgid "Esperanto"
+msgstr "世界语"
+
+#: src/i18n.rs
+msgid "French"
+msgstr "法语"
+
+#: src/i18n.rs
+msgid "Italian"
+msgstr "意大利语"
+
+#: src/i18n.rs
+msgid "Portuguese (Brazil)"
+msgstr "葡萄牙语（巴西）"
+
+#: src/i18n.rs
+msgid "Russian"
+msgstr "俄语"
+
+#: src/i18n.rs
+msgid "Japanese"
+msgstr "日语"
+
+#: src/i18n.rs
+msgid "Korean"
+msgstr "韩语"
+
+#: src/i18n.rs
+msgid "Chinese (Simplified)"
+msgstr "中文（简体）"
+
+#: src/i18n.rs
+msgid "Chinese (Traditional)"
+msgstr "中文（繁体）"
+
+#: src/model.rs
+msgid "At start"
+msgstr "开始时"
+
+#: src/model.rs
+msgid "Before start"
+msgstr "开始前"
+
+#: src/model.rs
+msgid "After start"
+msgstr "开始后"
+
+#: src/model.rs
+msgid "Before due"
+msgstr "截止前"
+
+#: src/model.rs
+msgid "At due"
+msgstr "截止时"
+
+#: src/model.rs
+msgid "Every day"
+msgstr "每天"
+
+#: src/model.rs
+msgid "“{}” isn't a duration. Try 15m, 2h or 1d."
+msgstr "“{}”不是时长。试试 15m、2h 或 1d。"
+
+#: src/model.rs
+msgid "“{}” isn't a time of day. Try 09:00."
+msgstr "“{}”不是时间。试试 09:00。"
+
+#: src/model.rs
+msgid "Starts {} ({})"
+msgstr "开始于 {}（{}）"
+
+#: src/model.rs
+msgid "Started {} ({})"
+msgstr "已于 {} 开始（{}）"
+
+#: src/model.rs
+msgid "Due {} ({})"
+msgstr "截止于 {}（{}）"
+
+#: src/model.rs
+msgid "Was due {} ({})"
+msgstr "已于 {} 截止（{}）"
+
+#: src/model.rs
+msgid "Couldn't read {} ({}). It was moved to {}."
+msgstr "无法读取 {}（{}）。它已被移到 {}。"
+
+#: src/model.rs
+msgid "Couldn't open {}: {}"
+msgstr "无法打开 {}：{}"
+
+#: src/model.rs
+msgid "Give it a name."
+msgstr "请起个名字。"
+
+#: src/model.rs
+msgid "That's a long name. Keep it under 40 characters."
+msgstr "名字太长了，请控制在 40 个字符以内。"
+
+#: src/model.rs
+msgid "There's already a category called “{}”."
+msgstr "已经有名为“{}”的分类。"
+
+#: src/platform.rs
+msgid "The program path isn't valid Unicode."
+msgstr "程序路径不是有效的 Unicode。"
+
+#: src/shortcuts.rs
+msgid "{} would get in the way of typing. Add Ctrl or Alt."
+msgstr "{} 会妨碍打字。请加上 Ctrl 或 Alt。"
+
+#: src/shortcuts.rs
+msgid "{} alone is too easy to hit by accident. Add Ctrl, Alt or Shift+Ctrl."
+msgstr "只用 {} 太容易误触。请加上 Ctrl、Alt 或 Shift+Ctrl。"
+
+#: src/shortcuts.rs
+msgid "{} can't be used as a system-wide key."
+msgstr "{} 不能用作全局快捷键。"
+
+#. A key's name as keyboards in your language print it.
+#: src/shortcuts.rs
+msgctxt "key"
+msgid "Ctrl"
+msgstr "Ctrl"
+
+#. A key's name as keyboards in your language print it.
+#: src/shortcuts.rs ui/settings.slint
+msgctxt "key"
+msgid "Alt"
+msgstr "Alt"
+
+#. A key's name as keyboards in your language print it.
+#: src/shortcuts.rs
+msgctxt "key"
+msgid "Shift"
+msgstr "Shift"
+
+#. A key's name as keyboards in your language print it.
+#: src/shortcuts.rs
+msgctxt "key"
+msgid "Win"
+msgstr "Win"
+
+#. A key's name as keyboards in your language print it.
+#: src/shortcuts.rs
+msgctxt "key"
+msgid "Super"
+msgstr "Super"
+
+#. A key's name as keyboards in your language print it.
+#: src/shortcuts.rs ui/launcher.slint ui/settings.slint
+msgctxt "key"
+msgid "Enter"
+msgstr "Enter"
+
+#. A key's name as keyboards in your language print it.
+#: src/shortcuts.rs
+msgctxt "key"
+msgid "Escape"
+msgstr "Esc"
+
+#. A key's name as keyboards in your language print it.
+#: src/shortcuts.rs ui/launcher.slint ui/settings.slint
+msgctxt "key"
+msgid "Tab"
+msgstr "Tab"
+
+#. A key's name as keyboards in your language print it.
+#: src/shortcuts.rs
+msgctxt "key"
+msgid "Space"
+msgstr "空格"
+
+#. A key's name as keyboards in your language print it.
+#: src/shortcuts.rs ui/settings.slint
+msgctxt "key"
+msgid "Backspace"
+msgstr "Backspace"
+
+#. A key's name as keyboards in your language print it.
+#: src/shortcuts.rs ui/settings.slint
+msgctxt "key"
+msgid "Delete"
+msgstr "Delete"
+
+#. A key's name as keyboards in your language print it.
+#: src/shortcuts.rs
+msgctxt "key"
+msgid "Insert"
+msgstr "Insert"
+
+#. A key's name as keyboards in your language print it.
+#: src/shortcuts.rs
+msgctxt "key"
+msgid "Home"
+msgstr "Home"
+
+#. A key's name as keyboards in your language print it.
+#: src/shortcuts.rs
+msgctxt "key"
+msgid "End"
+msgstr "End"
+
+#. A key's name as keyboards in your language print it.
+#: src/shortcuts.rs
+msgctxt "key"
+msgid "PageUp"
+msgstr "PageUp"
+
+#. A key's name as keyboards in your language print it.
+#: src/shortcuts.rs
+msgctxt "key"
+msgid "PageDown"
+msgstr "PageDown"
+
+#. A key's name as keyboards in your language print it.
+#: src/shortcuts.rs ui/launcher.slint ui/settings.slint
+msgctxt "key"
+msgid "Esc"
+msgstr "Esc"
+
+#: ui/app.slint
+msgid "Wisp ({})"
+msgstr "Wisp（{}）"
+
+#: ui/app.slint
+msgid "Open Wisp ({})"
+msgstr "打开 Wisp（{}）"
+
+#: ui/launcher.slint
+msgid "None"
+msgstr "无"
+
+#: ui/launcher.slint
+msgctxt "note details"
+msgid "Notes"
+msgstr "详情"
+
+#: ui/launcher.slint
+msgid "Details, links, a checklist… Enter starts a new line."
+msgstr "详情、链接、清单…… 按 Enter 换行。"
+
+#: ui/launcher.slint
+msgid "Category"
+msgstr "分类"
+
+#: ui/launcher.slint
+msgid "Starts"
+msgstr "开始"
+
+#. Dates Wisp must read in your language (the tests check). Separate several with commas. Words for dates are in src/dates/words.rs.
+#: ui/launcher.slint
+msgctxt "date example"
+msgid "tomorrow 9am, fri 14:00, +2h"
+msgstr "明天上午9点、周五 14:00、+2h"
+
+#: ui/launcher.slint
+msgid "Due"
+msgstr "截止"
+
+#. Dates Wisp must read in your language (the tests check). Separate several with commas. Words for dates are in src/dates/words.rs.
+#: ui/launcher.slint
+msgctxt "date example"
+msgid "fri 17:00, 10-20, next mon"
+msgstr "周五 17:00、10月20日、下周一"
+
+#: ui/launcher.slint
+msgid "Set a start or due time first"
+msgstr "请先设置开始或截止时间"
+
+#. A key's name as keyboards in your language print it.
+#: ui/launcher.slint
+msgctxt "key"
+msgid "Del"
+msgstr "Delete"
+
+#: ui/launcher.slint
+msgid "Change type"
+msgstr "更改类型"
+
+#: ui/launcher.slint
+msgid "Remove reminder"
+msgstr "删除提醒"
+
+#: ui/launcher.slint
+msgid "Save and close"
+msgstr "保存并关闭"
+
+#: ui/launcher.slint
+msgid "New line"
+msgstr "换行"
+
+#: ui/launcher.slint
+msgid "No category"
+msgstr "无分类"
+
+#: ui/launcher.slint
+msgid "Add reminder"
+msgstr "添加提醒"
+
+#: ui/launcher.slint
+msgid "Go to notes"
+msgstr "转到详情"
+
+#: ui/launcher.slint
+msgid "Mark done"
+msgstr "标记完成"
+
+#: ui/launcher.slint ui/settings.slint
+msgid "Back"
+msgstr "返回"
+
+#: ui/launcher.slint
+msgid "Scroll"
+msgstr "滚动"
+
+#: ui/launcher.slint
+msgid "Open"
+msgstr "打开"
+
+#: ui/launcher.slint
+msgid "Bring back"
+msgstr "恢复"
+
+#: ui/launcher.slint
+msgid "Browse"
+msgstr "浏览"
+
+#: ui/launcher.slint
+msgid "Shortcuts"
+msgstr "快捷键"
+
+#: ui/launcher.slint ui/settings.slint
+msgid "Save"
+msgstr "保存"
+
+#: ui/launcher.slint
+msgid "Save with a date"
+msgstr "保存并设日期"
+
+#: ui/launcher.slint
+msgid "Search what's done"
+msgstr "搜索已完成"
+
+#: ui/launcher.slint
+msgid "Type a thought. Enter saves it."
+msgstr "写下一个想法，按 Enter 保存。"
+
+#: ui/launcher.slint
+msgid "Title"
+msgstr "标题"
+
+#: ui/launcher.slint
+msgid "All"
+msgstr "全部"
+
+#: ui/settings.slint
+msgid "Light"
+msgstr "浅色"
+
+#: ui/settings.slint
+msgid "Dark"
+msgstr "深色"
+
+#: ui/settings.slint
+msgid "Name, like Work"
+msgstr "名称，例如“工作”"
+
+#: ui/settings.slint
+msgid "Press the new keys…"
+msgstr "请按下新的按键…"
+
+#: ui/settings.slint
+msgid "On"
+msgstr "开"
+
+#: ui/settings.slint
+msgid "Off"
+msgstr "关"
+
+#: ui/settings.slint
+msgid "Wisp Settings"
+msgstr "Wisp 设置"
+
+#: ui/settings.slint
+msgid "Keep the old keys"
+msgstr "保留原来的按键"
+
+#: ui/settings.slint
+msgid "Cancel"
+msgstr "取消"
+
+#: ui/settings.slint
+msgid "Choose a page"
+msgstr "选择页面"
+
+#: ui/settings.slint
+msgid "Open it"
+msgstr "打开"
+
+#: ui/settings.slint
+msgid "Close"
+msgstr "关闭"
+
+#: ui/settings.slint
+msgid "Rename"
+msgstr "重命名"
+
+#: ui/settings.slint
+msgid "Color"
+msgstr "颜色"
+
+#: ui/settings.slint
+msgid "Move"
+msgstr "移动"
+
+#: ui/settings.slint
+msgid "Remove"
+msgstr "删除"
+
+#: ui/settings.slint
+msgid "Change keys"
+msgstr "更改按键"
+
+#: ui/settings.slint
+msgid "Use default"
+msgstr "使用默认"
+
+#: ui/settings.slint
+msgid "Pages"
+msgstr "页面"
+
+#: ui/settings.slint
+msgid "Change"
+msgstr "更改"
+
+#: ui/settings.slint
+msgid "Switch"
+msgstr "切换"

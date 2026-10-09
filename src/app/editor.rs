@@ -7,7 +7,8 @@
 
 use super::{debug_log, later, App};
 use crate::config::Action;
-use crate::dates;
+use crate::dates::{self, Age};
+use crate::i18n;
 use crate::model::{self, Item, Reminder, Rule, RULE_KINDS};
 use crate::shortcuts::Combo;
 use crate::{Hint, ReminderRow, View};
@@ -53,15 +54,16 @@ impl App {
         ui.set_edit_start(item.start.map(canonical).unwrap_or_default().into());
         ui.set_edit_due(item.due.map(canonical).unwrap_or_default().into());
         let written = Local.timestamp_opt(item.created, 0).single().unwrap_or(now);
-        let age = dates::age_label(&written, &now);
-        let age = match age.as_str() {
-            "Yesterday" => "yesterday".to_owned(),
-            a if a == "just now" || a.ends_with("ago") => age,
-            _ => format!("on {age}"),
+        let meta = match dates::age(&written, &now) {
+            Age::JustNow => tr!("Written just now").to_owned(),
+            Age::Minutes(m) => tr!("Written {} min ago", m),
+            Age::Hours(h) => tr!("Written {} h ago", h),
+            Age::Yesterday => tr!("Written yesterday").to_owned(),
+            Age::On(day) => tr!("Written on {}", day),
         };
-        ui.set_edit_meta(format!("Written {age}").into());
+        ui.set_edit_meta(meta.into());
         ui.set_edit_category(self.category_index(item.category));
-        ui.set_back_label(if self.listing == View::Archive { "Done" } else { "Notes" }.into());
+        ui.set_back_label(if self.listing == View::Archive { tr!("Done") } else { tr!("Notes") }.into());
 
         let kinds: Vec<usize> = item.reminders.iter().map(|r| r.rule.kind()).collect();
         let rows: Vec<ReminderRow> = item.reminders.iter().map(|r| reminder_row(r.rule.kind(), &r.rule.amount(), false)).collect();
@@ -110,7 +112,7 @@ impl App {
         let now_ts = now.timestamp();
         let (start, due) = self.parse_fields();
         let at = |t: i64| Local.timestamp_opt(t, 0).single().unwrap_or(now);
-        let describe = |t: i64| format!("{} ({})", at(t).format("%a %b %-d, %H:%M"), dates::relative(t - now_ts));
+        let describe = |t: i64| format!("{} ({})", dates::full_label(&at(t)), dates::relative(t - now_ts));
         let hint = |r: &Result<Option<i64>, String>| match r {
             Ok(Some(t)) => Hint { text: describe(*t).into(), error: false },
             Ok(None) => Hint::default(),
@@ -120,7 +122,7 @@ impl App {
         let mut due_hint = hint(&due);
         if let (Ok(Some(s)), Ok(Some(d))) = (&start, &due) {
             if d < s {
-                due_hint = Hint { text: "Due is before the start".into(), error: true };
+                due_hint = Hint { text: tr!("Due is before the start").into(), error: true };
             }
         }
         ui.set_due_hint(due_hint);
@@ -150,14 +152,14 @@ impl App {
                 match Rule::from_parts(kind, &amount) {
                     Err(e) => Hint { text: e.into(), error: true },
                     Ok(rule) if rule.needs_start() && start.is_none() => {
-                        Hint { text: "Needs a start time, or it's dropped".into(), error: true }
+                        Hint { text: tr!("Needs a start time, or it's dropped").into(), error: true }
                     }
                     Ok(rule) if !rule.needs_start() && due.is_none() => {
-                        Hint { text: "Needs a due time, or it's dropped".into(), error: true }
+                        Hint { text: tr!("Needs a due time, or it's dropped").into(), error: true }
                     }
                     Ok(rule) => match rule.next_after(&Local, start, due, now_ts) {
                         Some(t) => Hint { text: dates::day_label(&at(t), &now).into(), error: false },
-                        None => Hint { text: "Already passed".into(), error: false },
+                        None => Hint { text: tr!("Already passed").into(), error: false },
                     },
                 }
             })
@@ -240,7 +242,7 @@ impl App {
         self.reminders.set_vec(rows);
         self.ui().set_focused_reminder(-1);
         self.update_editor();
-        self.toast("Reminder removed.", false);
+        self.toast(tr!("Reminder removed."), false);
         if target.is_none() {
             later(|app| app.ui().invoke_focus_editor(FIELD_ADD_REMINDER));
         }
@@ -251,7 +253,7 @@ impl App {
         let index = reminder_index(context).or_else(|| self.reminders.row_count().checked_sub(1));
         match index {
             Some(i) => self.reminder_remove(i as i32),
-            None => self.toast("This note has no reminders.", false),
+            None => self.toast(tr!("This note has no reminders."), false),
         }
     }
 
@@ -260,7 +262,7 @@ impl App {
         let has_start = matches!(start, Ok(Some(_)));
         let has_due = matches!(due, Ok(Some(_)));
         if !has_start && !has_due {
-            self.toast("Reminders ring relative to the start or due time. Add one of those first.", false);
+            self.toast(tr!("Reminders ring relative to the start or due time. Add one of those first."), false);
             self.ui().invoke_focus_editor(FIELD_START);
             return;
         }
@@ -301,29 +303,29 @@ impl App {
         let start = match start {
             Ok(t) => t,
             Err(_) if force => {
-                left_out.push("kept the old start time");
+                left_out.push(tr!("The old start time was kept.").to_owned());
                 session.before.start
             }
             Err(e) => {
                 ui.invoke_focus_editor(FIELD_START);
-                return Err(format!("Starts: {e} Fix it, or press Esc again to keep the old time."));
+                return Err(tr!("Starts: {} Fix it, or press Esc again to keep the old time.", e));
             }
         };
         let due = match due {
             Ok(t) => t,
             Err(_) if force => {
-                left_out.push("kept the old due time");
+                left_out.push(tr!("The old due time was kept.").to_owned());
                 session.before.due
             }
             Err(e) => {
                 ui.invoke_focus_editor(FIELD_DUE);
-                return Err(format!("Due: {e} Fix it, or press Esc again to keep the old time."));
+                return Err(tr!("Due: {} Fix it, or press Esc again to keep the old time.", e));
             }
         };
         if let (Some(s), Some(d)) = (start, due) {
             if d < s && !force {
                 ui.invoke_focus_editor(FIELD_DUE);
-                return Err("The due time is before the start. Fix it, or press Esc again to save it anyway.".into());
+                return Err(tr!("The due time is before the start. Fix it, or press Esc again to save it anyway.").into());
             }
         }
 
@@ -337,7 +339,7 @@ impl App {
                     dropped += 1;
                     continue;
                 }
-                Err(e) => return Err(format!("Reminder: {e} Fix it, or press Esc again to drop it.")),
+                Err(e) => return Err(tr!("Reminder: {} Fix it, or press Esc again to drop it.", e)),
             };
             // A reminder with nothing to follow can't ring; leave it out rather than nag.
             let anchored = if rule.needs_start() { start.is_some() } else { due.is_some() };
@@ -396,15 +398,13 @@ impl App {
         self.selected_id = Some(id);
 
         if dropped > 0 {
-            left_out.push(if dropped == 1 { "left out a reminder that had no time to follow" } else { "left out reminders that had no time to follow" });
+            left_out.push(trn!(
+                "A reminder with no start or due time to follow was left out.",
+                "{} reminders with no start or due time to follow were left out.",
+                dropped
+            ));
         }
-        Ok((!left_out.is_empty()).then(|| {
-            let mut message = format!("Saved, but {}.", left_out.join(" and "));
-            if dropped > 1 {
-                message = message.replace("reminders", &format!("{dropped} reminders"));
-            }
-            message
-        }))
+        Ok((!left_out.is_empty()).then(|| format!("{} {}", tr!("Saved."), left_out.join(" "))))
     }
 
     /// Saves and returns to the list. Returns false (and says why) if something
@@ -530,10 +530,10 @@ fn reminder_index(context: &str) -> Option<usize> {
 
 fn reminder_row(kind: usize, amount: &str, fresh: bool) -> ReminderRow {
     ReminderRow {
-        kind_label: RULE_KINDS[kind.min(RULE_KINDS.len() - 1)].into(),
+        kind_label: i18n::tr(RULE_KINDS[kind.min(RULE_KINDS.len() - 1)]).into(),
         amount: amount.into(),
         has_amount: matches!(kind, 1 | 2 | 3 | 5),
-        placeholder: if kind == 5 { "start time".into() } else { "15m".into() },
+        placeholder: if kind == 5 { tr!("start time").into() } else { "15m".into() },
         fresh,
     }
 }

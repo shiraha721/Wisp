@@ -1,0 +1,1555 @@
+# Portuguese (Brazil) translation of Wisp.
+msgid ""
+msgstr ""
+"Project-Id-Version: Wisp\n"
+"Language: pt_BR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: src/app/editor.rs
+msgid "Written just now"
+msgstr "Escrita agora mesmo"
+
+#: src/app/editor.rs
+msgid "Written {} min ago"
+msgstr "Escrita há {} min"
+
+#: src/app/editor.rs
+msgid "Written {} h ago"
+msgstr "Escrita há {} h"
+
+#: src/app/editor.rs
+msgid "Written yesterday"
+msgstr "Escrita ontem"
+
+#: src/app/editor.rs
+msgid "Written on {}"
+msgstr "Escrita em {}"
+
+#: src/app.rs src/app/editor.rs ui/launcher.slint
+msgid "Done"
+msgstr "Concluídas"
+
+#: src/app.rs src/app/editor.rs ui/launcher.slint
+msgid "Notes"
+msgstr "Notas"
+
+#: src/app/editor.rs
+msgid "Due is before the start"
+msgstr "O prazo é antes do início"
+
+#: src/app/editor.rs
+msgid "Needs a start time, or it's dropped"
+msgstr "Precisa de um início, senão será descartado"
+
+#: src/app/editor.rs
+msgid "Needs a due time, or it's dropped"
+msgstr "Precisa de um prazo, senão será descartado"
+
+#: src/app/editor.rs
+msgid "Already passed"
+msgstr "Já passou"
+
+#: src/app/editor.rs
+msgid "Reminder removed."
+msgstr "Lembrete removido."
+
+#: src/app/editor.rs
+msgid "This note has no reminders."
+msgstr "Esta nota não tem lembretes."
+
+#: src/app/editor.rs
+msgid "Reminders ring relative to the start or due time. Add one of those first."
+msgstr "Os lembretes tocam com base no início ou no prazo. Adicione um dos dois primeiro."
+
+#: src/app/editor.rs
+msgid "The old start time was kept."
+msgstr "O início anterior foi mantido."
+
+#: src/app/editor.rs
+msgid "Starts: {} Fix it, or press Esc again to keep the old time."
+msgstr "Início: {} Corrija ou pressione Esc de novo para manter o horário anterior."
+
+#: src/app/editor.rs
+msgid "The old due time was kept."
+msgstr "O prazo anterior foi mantido."
+
+#: src/app/editor.rs
+msgid "Due: {} Fix it, or press Esc again to keep the old time."
+msgstr "Prazo: {} Corrija ou pressione Esc de novo para manter o horário anterior."
+
+#: src/app/editor.rs
+msgid "The due time is before the start. Fix it, or press Esc again to save it anyway."
+msgstr "O prazo é antes do início. Corrija ou pressione Esc de novo para salvar mesmo assim."
+
+#: src/app/editor.rs
+msgid "Reminder: {} Fix it, or press Esc again to drop it."
+msgstr "Lembrete: {} Corrija ou pressione Esc de novo para descartá-lo."
+
+#: src/app/editor.rs
+msgid "A reminder with no start or due time to follow was left out."
+msgid_plural "{} reminders with no start or due time to follow were left out."
+msgstr[0] "Um lembrete sem início ou prazo para seguir foi deixado de fora."
+msgstr[1] "{} lembretes sem início ou prazo para seguir foram deixados de fora."
+
+#: src/app/editor.rs
+msgid "Saved."
+msgstr "Salvo."
+
+#: src/app/editor.rs
+msgid "start time"
+msgstr "horário de início"
+
+#: src/app/settings.rs
+msgid "General"
+msgstr "Geral"
+
+#: src/app/settings.rs
+msgid "How Wisp starts, and how its window behaves."
+msgstr "Como o Wisp inicia e como a janela dele se comporta."
+
+#: src/app.rs src/app/settings.rs
+msgid "Categories"
+msgstr "Categorias"
+
+#: src/app/settings.rs
+msgid "Lists like Daily, Work or School. In Wisp, type #name to file a note in one or to see only that one."
+msgstr "Listas como Dia a dia, Trabalho ou Escola. No Wisp, digite #nome para guardar uma nota em uma delas ou ver só essa."
+
+#: src/app/settings.rs
+msgid "Hotkeys"
+msgstr "Atalhos"
+
+#: src/app/settings.rs
+msgid "Every key Wisp listens to. Select one, press Enter, then press the new combination."
+msgstr "Todas as teclas que o Wisp escuta. Escolha uma, pressione Enter e depois a nova combinação."
+
+#: src/app/settings.rs
+msgid "Appearance"
+msgstr "Aparência"
+
+#: src/app/settings.rs
+msgid "Light, dark, or whatever your system uses."
+msgstr "Claro, escuro ou o que o seu sistema usar."
+
+#: src/app/settings.rs
+msgid "Language"
+msgstr "Idioma"
+
+#: src/app/settings.rs
+msgid "The language of Wisp's windows, and of the dates you type besides English."
+msgstr "O idioma das janelas do Wisp e das datas que você digita, além do inglês."
+
+#: src/app/settings.rs
+msgid "About"
+msgstr "Sobre"
+
+#: src/app/settings.rs
+msgid "The version you're running and where your notes are kept."
+msgstr "A versão que você está usando e onde suas notas ficam."
+
+#: src/app/settings.rs
+msgid "Start with Windows"
+msgstr "Iniciar com o Windows"
+
+#: src/app/settings.rs
+msgid "Open at login"
+msgstr "Abrir ao fazer login"
+
+#: src/app/settings.rs
+msgid "Start when you log in"
+msgstr "Iniciar ao fazer login"
+
+#: src/app/settings.rs
+msgid "Startup"
+msgstr "Inicialização"
+
+#: src/app/settings.rs
+msgid "Window"
+msgstr "Janela"
+
+#: src/app/settings.rs ui/launcher.slint
+msgid "Reminders"
+msgstr "Lembretes"
+
+#: src/app.rs src/app/settings.rs
+msgid "Anywhere"
+msgstr "Em qualquer lugar"
+
+#: src/app/settings.rs
+msgid "Defaults"
+msgstr "Padrões"
+
+#: src/app/settings.rs
+msgid "Version {}"
+msgstr "Versão {}"
+
+#: src/app/settings.rs
+msgid "Wisp waits in the tray, ready for your hotkey"
+msgstr "O Wisp espera na bandeja do sistema, pronto para o seu atalho"
+
+#: src/app/settings.rs
+msgid "Hide when I click elsewhere"
+msgstr "Ocultar quando eu clicar em outro lugar"
+
+#: src/app/settings.rs
+msgid "Like a launcher: the window gets out of the way when you switch apps"
+msgstr "Como um iniciador: a janela sai do caminho quando você troca de aplicativo"
+
+#: src/app/settings.rs
+msgid "Open Wisp when a reminder rings"
+msgstr "Abrir o Wisp quando um lembrete tocar"
+
+#: src/app/settings.rs
+msgid "Shows the window as well as the system notification"
+msgstr "Mostra a janela além da notificação do sistema"
+
+#: src/app/settings.rs
+msgid "No notes yet"
+msgstr "Nenhuma nota ainda"
+
+#: src/app/settings.rs
+msgid "{} open"
+msgstr "Abertas: {}"
+
+#: src/app/settings.rs
+msgid "{} done"
+msgstr "Concluídas: {}"
+
+#: src/app/settings.rs
+msgid "{} open, {} done"
+msgstr "Abertas: {}, concluídas: {}"
+
+#: src/app/settings.rs
+msgid "Enter adds it, Esc cancels"
+msgstr "Enter adiciona, Esc cancela"
+
+#: src/app/settings.rs
+msgid "Add a category"
+msgstr "Adicionar uma categoria"
+
+#: src/app/settings.rs
+msgid "Then file notes with #name, or with {} on a note"
+msgstr "Depois guarde notas com #nome, ou com {} em uma nota"
+
+#: src/app/settings.rs
+msgid "Add"
+msgstr "Adicionar"
+
+#: src/app/settings.rs
+msgid "On Wayland, also bind “wisp --toggle” to a key in your system settings"
+msgstr "No Wayland, associe também “wisp --toggle” a uma tecla nas configurações do sistema"
+
+#: src/app/settings.rs
+msgid "Works in every app. Press it again to hide Wisp."
+msgstr "Funciona em qualquer aplicativo. Pressione de novo para ocultar o Wisp."
+
+#: src/app/settings.rs src/config.rs
+msgid "Open Wisp from anywhere"
+msgstr "Abrir o Wisp de qualquer lugar"
+
+#: src/app/settings.rs
+msgid "{} (default: {})"
+msgstr "{} (padrão: {})"
+
+#: src/app/settings.rs
+msgid "Reset all shortcuts"
+msgstr "Redefinir todos os atalhos"
+
+#: src/app/settings.rs
+msgid "Puts every key, including the one that opens Wisp, back to its default"
+msgstr "Volta cada tecla, inclusive a que abre o Wisp, ao padrão"
+
+#: src/app/settings.rs
+msgid "Reset"
+msgstr "Redefinir"
+
+#: src/app/settings.rs
+msgid "Theme"
+msgstr "Tema"
+
+#: src/app/settings.rs
+msgid "Applies to the launcher and this window"
+msgstr "Vale para o iniciador e esta janela"
+
+#: src/app/settings.rs ui/settings.slint
+msgid "Match system"
+msgstr "Igual ao sistema"
+
+#: src/app/settings.rs
+msgid "Follows your system's language ({} right now)"
+msgstr "Segue o idioma do seu sistema ({} agora)"
+
+#: src/app/settings.rs
+msgid "A keyboard-first catcher for ideas, memos and to-dos"
+msgstr "Captura ideias, lembretes e tarefas, com o teclado em primeiro lugar"
+
+#: src/app/settings.rs
+msgid "Notes folder (next to Wisp)"
+msgstr "Pasta de notas (ao lado do Wisp)"
+
+#: src/app/settings.rs
+msgid "Notes folder"
+msgstr "Pasta de notas"
+
+#: src/app/settings.rs
+msgid "Open folder"
+msgstr "Abrir pasta"
+
+#: src/app/settings.rs
+msgid "Every shortcut is back to its default."
+msgstr "Todos os atalhos voltaram ao padrão."
+
+#: src/app/settings.rs
+msgid "{} is taken by “{}”"
+msgstr "{} já está em uso por “{}”"
+
+#: src/app/settings.rs
+msgid "{} is back to {}."
+msgstr "{} voltou a ser {}."
+
+#: src/app/settings.rs
+msgid "Press Delete again to remove it."
+msgstr "Pressione Delete de novo para removê-la."
+
+#: src/app/settings.rs
+msgid "Press Delete again to remove it. Its notes stay, without a category."
+msgstr "Pressione Delete de novo para removê-la. As notas dela ficam, sem categoria."
+
+#: src/app/settings.rs
+msgid "Click the bin again to remove it."
+msgstr "Clique de novo na lixeira para removê-la."
+
+#: src/app/settings.rs
+msgid "Click the bin again to remove it. Its notes stay, without a category."
+msgstr "Clique de novo na lixeira para removê-la. As notas dela ficam, sem categoria."
+
+#: src/app/settings.rs
+msgid "Removed “{}”."
+msgstr "“{}” removida."
+
+#: src/app/settings.rs
+msgid "Saved: {}"
+msgstr "Salvo: {}"
+
+#: src/app/settings.rs
+msgid "{} now opens Wisp from anywhere."
+msgstr "{} agora abre o Wisp de qualquer lugar."
+
+#: src/app/settings.rs
+msgid "Couldn't change it: {}"
+msgstr "Não foi possível mudar: {}"
+
+#: src/app.rs
+msgid "Daily"
+msgstr "Dia a dia"
+
+#: src/app.rs
+msgid "Work"
+msgstr "Trabalho"
+
+#: src/app.rs
+msgid "School"
+msgstr "Escola"
+
+#: src/app.rs
+msgid "System-wide keys aren't available here ({})."
+msgstr "Atalhos globais não estão disponíveis aqui ({})."
+
+#: src/app.rs
+msgid "{} Change it in Settings ({})."
+msgstr "{} Mude isso nas Configurações ({})."
+
+#: src/app.rs
+msgid "{} Pick another key in Settings ({})."
+msgstr "{} Escolha outra tecla nas Configurações ({})."
+
+#: src/app.rs
+msgid "Your notes now live next to Wisp, in {}"
+msgstr "Suas notas agora ficam ao lado do Wisp, em {}"
+
+#: src/app.rs
+msgid "Couldn't save notes: {}"
+msgstr "Não foi possível salvar as notas: {}"
+
+#: src/app.rs
+msgid "Couldn't save settings: {}"
+msgstr "Não foi possível salvar as configurações: {}"
+
+#: src/app.rs
+msgid "Type a note first, then add its dates."
+msgstr "Digite uma nota primeiro e depois adicione as datas."
+
+#: src/app.rs
+msgid "Pick a note with ↓ first."
+msgstr "Escolha uma nota com ↓ primeiro."
+
+#: src/app.rs
+msgid "Open a note (Enter) to change its reminders."
+msgstr "Abra uma nota (Enter) para mudar os lembretes dela."
+
+#: src/app.rs
+msgid "Saved to {}. {} takes it back."
+msgstr "Salva em {}. {} desfaz."
+
+#: src/app.rs
+msgid "Saved. {} takes it back."
+msgstr "Salva. {} desfaz."
+
+#: src/app.rs
+msgid "There are no categories yet. Add some in Settings ({})."
+msgstr "Ainda não há categorias. Adicione algumas nas Configurações ({})."
+
+#: src/app.rs
+msgid "Moved to {}."
+msgstr "Movida para {}."
+
+#: src/app.rs
+msgid "Took it out of its category."
+msgstr "Tirada da categoria."
+
+#: src/app.rs
+msgid "Back in your notes."
+msgstr "De volta às suas notas."
+
+#: src/app.rs
+msgid "Done, and moved to the Done list. {} to undo."
+msgstr "Concluída e movida para a lista Concluídas. {} para desfazer."
+
+#: src/app.rs
+msgid "Deleted. {} brings it back."
+msgstr "Excluída. {} traz de volta."
+
+#: src/app.rs
+msgid "Nothing to undo."
+msgstr "Nada para desfazer."
+
+#: src/app.rs
+msgid "Unsaved. The text is back in the box."
+msgstr "Desfeito. O texto voltou para a caixa."
+
+#: src/app.rs
+msgid "Restored."
+msgstr "Restaurada."
+
+#: src/app.rs
+msgid "Undone."
+msgstr "Desfeito."
+
+#: src/app.rs
+msgid "Done today"
+msgstr "Concluídas hoje"
+
+#: src/app.rs
+msgid "Done yesterday"
+msgstr "Concluídas ontem"
+
+#: src/app.rs
+msgid "Done {}"
+msgstr "Concluídas em {}"
+
+#: src/app.rs
+msgid "Scheduled"
+msgstr "Agendadas"
+
+#: src/app.rs
+msgid "Starts {}"
+msgstr "Começa {}"
+
+#: src/app.rs
+msgid "Started {}"
+msgstr "Começou {}"
+
+#: src/app.rs
+msgid "Due {}"
+msgstr "Prazo {}"
+
+#: src/app.rs
+msgid "{} of {} match"
+msgstr "{} de {} correspondem"
+
+#: src/app.rs
+msgid "Nothing in {} yet"
+msgstr "Nada em {} ainda"
+
+#: src/app.rs
+msgid "Type a note and press Enter to file it here."
+msgstr "Digite uma nota e pressione Enter para guardá-la aqui."
+
+#: src/app.rs
+msgid "Nothing done in {} yet"
+msgstr "Nada concluído em {} ainda"
+
+#: src/app.rs
+msgid "Nothing written yet"
+msgstr "Nada escrito ainda"
+
+#: src/app.rs
+msgid "Type above and press Enter. {} opens Wisp from any app."
+msgstr "Digite acima e pressione Enter. {} abre o Wisp em qualquer aplicativo."
+
+#: src/app.rs
+msgid "All clear"
+msgstr "Tudo em dia"
+
+#: src/app.rs
+msgid "Notes you mark done wait in the Done tab."
+msgstr "As notas concluídas esperam na aba Concluídas."
+
+#: src/app.rs
+msgid "Press Enter to save it"
+msgstr "Pressione Enter para salvar"
+
+#: src/app.rs
+msgid "No notes match"
+msgstr "Nenhuma nota corresponde"
+
+#: src/app.rs
+msgid "Press Enter to save this as a new note in {}."
+msgstr "Pressione Enter para salvar isto como uma nova nota em {}."
+
+#: src/app.rs
+msgid "Press Enter to save this as a new note."
+msgstr "Pressione Enter para salvar isto como uma nova nota."
+
+#: src/app.rs
+msgid "Nothing done yet"
+msgstr "Nada concluído ainda"
+
+#: src/app.rs
+msgid "Mark a note done with {} and it moves here."
+msgstr "Marque uma nota como concluída com {} e ela vem para cá."
+
+#: src/app.rs
+msgid "Nothing done matches"
+msgstr "Nada concluído corresponde"
+
+#: src/app.rs
+msgid "Reminder: {}"
+msgstr "Lembrete: {}"
+
+#: src/app.rs
+msgid "{} is taken by another program, so Wisp opens with {} for now."
+msgstr "{} está em uso por outro programa, então o Wisp abre com {} por enquanto."
+
+#: src/app.rs
+msgid "System-wide keys aren't available here."
+msgstr "Atalhos globais não estão disponíveis aqui."
+
+#: src/app.rs
+msgid "Couldn't claim {} ({}). Another app may use it."
+msgstr "Não foi possível reservar {} ({}). Outro aplicativo pode estar usando."
+
+#. Dates Wisp must read in your language (the tests check). Separate several with commas. Words for dates are in src/dates/words.rs.
+#: src/app.rs
+msgctxt "date example"
+msgid "tomorrow 9am"
+msgstr "amanhã às 9h"
+
+#: src/app.rs
+msgid "Day and time"
+msgstr "Dia e hora"
+
+#. Dates Wisp must read in your language (the tests check). Separate several with commas. Words for dates are in src/dates/words.rs.
+#: src/app.rs
+msgctxt "date example"
+msgid "fri 17:00"
+msgstr "sexta 17h"
+
+#: src/app.rs
+msgid "This coming Friday"
+msgstr "Esta sexta-feira"
+
+#. Dates Wisp must read in your language (the tests check). Separate several with commas. Words for dates are in src/dates/words.rs.
+#: src/app.rs
+msgctxt "date example"
+msgid "next mon"
+msgstr "próxima segunda"
+
+#: src/app.rs
+msgid "Monday next week"
+msgstr "Segunda da semana que vem"
+
+#. Dates Wisp must read in your language (the tests check). Separate several with commas. Words for dates are in src/dates/words.rs.
+#: src/app.rs
+msgctxt "date example"
+msgid "in 2 hours"
+msgstr "em 2 horas"
+
+#: src/app.rs
+msgid "From now (+30m, +2h and +1d work too)"
+msgstr "A partir de agora (+30m, +2h e +1d também funcionam)"
+
+#. Dates Wisp must read in your language (the tests check). Separate several with commas. Words for dates are in src/dates/words.rs.
+#: src/app.rs
+msgctxt "date example"
+msgid "10-20 14:00"
+msgstr "20/10 14h"
+
+#: src/app.rs
+msgid "Month and day"
+msgstr "Dia e mês"
+
+#: src/app.rs
+msgid "Any date"
+msgstr "Qualquer data"
+
+#: src/app.rs
+msgid "English works too"
+msgstr "Inglês também funciona"
+
+#: src/app.rs
+msgid "Open or hide Wisp"
+msgstr "Abrir ou ocultar o Wisp"
+
+#: src/app.rs src/config.rs
+msgid "Writing"
+msgstr "Escrever"
+
+#: src/app.rs
+msgid "Save the note"
+msgstr "Salvar a nota"
+
+#: src/app.rs
+msgid "New line (lines after the first become its notes)"
+msgstr "Nova linha (as linhas depois da primeira viram os detalhes)"
+
+#: src/app.rs
+msgid "Save, then add dates and reminders"
+msgstr "Salvar e depois adicionar datas e lembretes"
+
+#: src/app.rs
+msgid "Hide Wisp (what you typed stays)"
+msgstr "Ocultar o Wisp (o que você digitou fica)"
+
+#: src/app.rs src/config.rs
+msgid "Your notes"
+msgstr "Suas notas"
+
+#: src/app.rs
+msgid "Move through notes"
+msgstr "Percorrer as notas"
+
+#: src/app.rs
+msgid "Next or previous note, round and round"
+msgstr "Nota seguinte ou anterior, dando a volta"
+
+#: src/app.rs src/config.rs
+msgid "Open the selected note"
+msgstr "Abrir a nota selecionada"
+
+#: src/app.rs
+msgid "Mark done (or bring back from Done)"
+msgstr "Marcar como concluída (ou trazer de volta de Concluídas)"
+
+#: src/app.rs src/config.rs ui/launcher.slint
+msgid "Delete"
+msgstr "Excluir"
+
+#: src/app.rs
+msgid "Undo the last change"
+msgstr "Desfazer a última alteração"
+
+#: src/app.rs
+msgid "Notes tab"
+msgstr "Aba Notas"
+
+#: src/app.rs
+msgid "Done tab"
+msgstr "Aba Concluídas"
+
+#: src/app.rs
+msgid "Back to typing"
+msgstr "Voltar a digitar"
+
+#: src/app.rs
+msgid "#name"
+msgstr "#nome"
+
+#: src/app.rs
+msgid "Typed in the box: shows only that category, and files the note there"
+msgstr "Digitado na caixa: mostra só essa categoria e guarda a nota nela"
+
+#: src/app.rs
+msgid "Next category for the selected note, or for what you're typing"
+msgstr "Próxima categoria para a nota selecionada ou para o que você digita"
+
+#: src/app.rs
+msgid "Previous category"
+msgstr "Categoria anterior"
+
+#: src/app.rs src/config.rs
+msgid "Editing a note"
+msgstr "Editar uma nota"
+
+#: src/app.rs
+msgid "From the title, go to the notes"
+msgstr "Do título, ir para os detalhes"
+
+#: src/app.rs ui/launcher.slint
+msgid "Next field"
+msgstr "Próximo campo"
+
+#: src/app.rs
+msgid "Save and close (twice: keep what's valid)"
+msgstr "Salvar e fechar (duas vezes: manter o que é válido)"
+
+#: src/app.rs src/config.rs ui/launcher.slint
+msgid "Add a reminder"
+msgstr "Adicionar um lembrete"
+
+#: src/app.rs
+msgid "Change the selected reminder"
+msgstr "Mudar o lembrete selecionado"
+
+#: src/app.rs
+msgid "Remove the selected reminder"
+msgstr "Remover o lembrete selecionado"
+
+#: src/app.rs
+msgid "Remove a reminder from anywhere"
+msgstr "Remover um lembrete de qualquer lugar"
+
+#: src/app.rs
+msgid "Dates you can type"
+msgstr "Datas que você pode digitar"
+
+#: src/app.rs src/config.rs
+msgid "Wisp"
+msgstr "Wisp"
+
+#: src/app.rs ui/app.slint ui/launcher.slint ui/settings.slint
+msgid "Settings"
+msgstr "Configurações"
+
+#: src/app.rs
+msgid "This list"
+msgstr "Esta lista"
+
+#: src/app.rs
+msgid "Quit"
+msgstr "Sair"
+
+#: src/config.rs
+msgid "Save and add dates"
+msgstr "Salvar e adicionar datas"
+
+#: src/config.rs
+msgid "Saves what you typed and opens its start, due time and reminders"
+msgstr "Salva o que você digitou e abre início, prazo e lembretes"
+
+#: src/config.rs
+msgid "Enter does the same"
+msgstr "Enter faz o mesmo"
+
+#: src/config.rs
+msgid "Mark done / bring back"
+msgstr "Concluir / trazer de volta"
+
+#: src/config.rs
+msgid "Done notes move to the Done list instead of being deleted"
+msgstr "Notas concluídas vão para a lista Concluídas em vez de serem excluídas"
+
+#: src/config.rs ui/launcher.slint
+msgid "Change category"
+msgstr "Mudar categoria"
+
+#: src/config.rs
+msgid "Of the selected note, the note you're editing, or what you're typing. Add Shift to go back"
+msgstr "Da nota selecionada, da nota em edição ou do que você digita. Com Shift, volta"
+
+#: src/config.rs
+msgid "Removes the note; Undo brings it back"
+msgstr "Remove a nota; Desfazer traz de volta"
+
+#: src/config.rs
+msgid "Undo"
+msgstr "Desfazer"
+
+#: src/config.rs
+msgid "Reverts the last change to your notes"
+msgstr "Reverte a última alteração nas suas notas"
+
+#: src/config.rs
+msgid "Reminders follow the start or due time, so set one of those first"
+msgstr "Os lembretes seguem o início ou o prazo, então defina um dos dois primeiro"
+
+#: src/config.rs
+msgid "Remove a reminder"
+msgstr "Remover um lembrete"
+
+#: src/config.rs
+msgid "Removes the reminder you're on, or the last one"
+msgstr "Remove o lembrete em que você está, ou o último"
+
+#: src/config.rs
+msgid "Moving around"
+msgstr "Navegação"
+
+#: src/config.rs
+msgid "Show notes"
+msgstr "Mostrar notas"
+
+#: src/config.rs
+msgid "Your open notes and to-dos"
+msgstr "Suas notas e tarefas em aberto"
+
+#: src/config.rs
+msgid "Show done"
+msgstr "Mostrar concluídas"
+
+#: src/config.rs
+msgid "Everything you've marked done"
+msgstr "Tudo o que você marcou como concluído"
+
+#: src/config.rs ui/launcher.slint
+msgid "Keyboard shortcuts"
+msgstr "Atalhos de teclado"
+
+#: src/config.rs
+msgid "Lists every key in the Wisp window"
+msgstr "Lista todas as teclas da janela do Wisp"
+
+#: src/config.rs
+msgid "Open settings"
+msgstr "Abrir configurações"
+
+#: src/config.rs
+msgid "This window"
+msgstr "Esta janela"
+
+#: src/config.rs ui/app.slint
+msgid "Quit Wisp"
+msgstr "Sair do Wisp"
+
+#: src/config.rs
+msgid "Closes Wisp completely; the hotkey stops working until it starts again"
+msgstr "Fecha o Wisp por completo; o atalho para de funcionar até ele iniciar de novo"
+
+#: src/config.rs
+msgid "Settings file has an error ({}); using defaults."
+msgstr "O arquivo de configurações tem um erro ({}); usando os padrões."
+
+#: src/dates.rs
+msgid "“next” what? Try “next fri”."
+msgstr "“próxima” o quê? Tente “próxima sexta”."
+
+#: src/dates.rs
+msgid "Couldn't read “next {}”."
+msgstr "Não entendi “próxima {}”."
+
+#: src/dates.rs
+msgid "“in” how long? Try “in 30m”."
+msgstr "“em” quanto tempo? Tente “em 30 minutos”."
+
+#: src/dates.rs
+msgid "Couldn't read “in {}”."
+msgstr "Não entendi “em {}”."
+
+#: src/dates.rs
+msgid "Which day of {}?"
+msgstr "Que dia de {}?"
+
+#: src/dates.rs
+msgid "Couldn't read “{}”."
+msgstr "Não entendi “{}”."
+
+#: src/dates.rs
+msgid "Add a day or a time, like “tomorrow 9am”."
+msgstr "Informe um dia ou um horário, como “amanhã às 9h”."
+
+#. A short weekday name, as in “Fri 17:00”.
+#: src/dates.rs
+msgctxt "weekday"
+msgid "Mon"
+msgstr "seg"
+
+#. A short weekday name, as in “Fri 17:00”.
+#: src/dates.rs
+msgctxt "weekday"
+msgid "Tue"
+msgstr "ter"
+
+#. A short weekday name, as in “Fri 17:00”.
+#: src/dates.rs
+msgctxt "weekday"
+msgid "Wed"
+msgstr "qua"
+
+#. A short weekday name, as in “Fri 17:00”.
+#: src/dates.rs
+msgctxt "weekday"
+msgid "Thu"
+msgstr "qui"
+
+#. A short weekday name, as in “Fri 17:00”.
+#: src/dates.rs
+msgctxt "weekday"
+msgid "Fri"
+msgstr "sex"
+
+#. A short weekday name, as in “Fri 17:00”.
+#: src/dates.rs
+msgctxt "weekday"
+msgid "Sat"
+msgstr "sáb"
+
+#. A short weekday name, as in “Fri 17:00”.
+#: src/dates.rs
+msgctxt "weekday"
+msgid "Sun"
+msgstr "dom"
+
+#. A short month name, as in “Oct 12”. Use the form a date takes, if your language changes it.
+#: src/dates.rs
+msgctxt "month"
+msgid "Jan"
+msgstr "jan"
+
+#. A short month name, as in “Oct 12”. Use the form a date takes, if your language changes it.
+#: src/dates.rs
+msgctxt "month"
+msgid "Feb"
+msgstr "fev"
+
+#. A short month name, as in “Oct 12”. Use the form a date takes, if your language changes it.
+#: src/dates.rs
+msgctxt "month"
+msgid "Mar"
+msgstr "mar"
+
+#. A short month name, as in “Oct 12”. Use the form a date takes, if your language changes it.
+#: src/dates.rs
+msgctxt "month"
+msgid "Apr"
+msgstr "abr"
+
+#. A short month name, as in “Oct 12”. Use the form a date takes, if your language changes it.
+#: src/dates.rs
+msgctxt "month"
+msgid "May"
+msgstr "mai"
+
+#. A short month name, as in “Oct 12”. Use the form a date takes, if your language changes it.
+#: src/dates.rs
+msgctxt "month"
+msgid "Jun"
+msgstr "jun"
+
+#. A short month name, as in “Oct 12”. Use the form a date takes, if your language changes it.
+#: src/dates.rs
+msgctxt "month"
+msgid "Jul"
+msgstr "jul"
+
+#. A short month name, as in “Oct 12”. Use the form a date takes, if your language changes it.
+#: src/dates.rs
+msgctxt "month"
+msgid "Aug"
+msgstr "ago"
+
+#. A short month name, as in “Oct 12”. Use the form a date takes, if your language changes it.
+#: src/dates.rs
+msgctxt "month"
+msgid "Sep"
+msgstr "set"
+
+#. A short month name, as in “Oct 12”. Use the form a date takes, if your language changes it.
+#: src/dates.rs
+msgctxt "month"
+msgid "Oct"
+msgstr "out"
+
+#. A short month name, as in “Oct 12”. Use the form a date takes, if your language changes it.
+#: src/dates.rs
+msgctxt "month"
+msgid "Nov"
+msgstr "nov"
+
+#. A short month name, as in “Oct 12”. Use the form a date takes, if your language changes it.
+#: src/dates.rs
+msgctxt "month"
+msgid "Dec"
+msgstr "dez"
+
+#: src/dates.rs
+msgid "Today {}"
+msgstr "Hoje {}"
+
+#: src/dates.rs
+msgid "today {}"
+msgstr "hoje {}"
+
+#: src/dates.rs
+msgid "Tomorrow {}"
+msgstr "Amanhã {}"
+
+#: src/dates.rs
+msgid "tomorrow {}"
+msgstr "amanhã {}"
+
+#: src/dates.rs
+msgid "Yesterday {}"
+msgstr "Ontem {}"
+
+#: src/dates.rs
+msgid "yesterday {}"
+msgstr "ontem {}"
+
+#. A chrono date pattern: %a is the weekday and %b the month (both from this catalog), %-d the day, %-m the month as a number, %Y the year, %H:%M the time.
+#. a weekday and a time, as in "Fri 17:00". %a is the weekday, %H:%M the time.
+#: src/dates.rs
+msgctxt "date format"
+msgid "%a %H:%M"
+msgstr "%a %H:%M"
+
+#. A chrono date pattern: %a is the weekday and %b the month (both from this catalog), %-d the day, %-m the month as a number, %Y the year, %H:%M the time.
+#. a date this year and a time, as in "Oct 12 09:00". %b is the month, %-d the day.
+#: src/dates.rs
+msgctxt "date format"
+msgid "%b %-d %H:%M"
+msgstr "%-d %b %H:%M"
+
+#. A chrono date pattern: %a is the weekday and %b the month (both from this catalog), %-d the day, %-m the month as a number, %Y the year, %H:%M the time.
+#. a date in another year and a time, as in "Jan 3 2027 09:00".
+#: src/dates.rs
+msgctxt "date format"
+msgid "%b %-d %Y %H:%M"
+msgstr "%-d %b %Y %H:%M"
+
+#. A chrono date pattern: %a is the weekday and %b the month (both from this catalog), %-d the day, %-m the month as a number, %Y the year, %H:%M the time.
+#. a day this year, as in "Oct 12". %b is the month, %-d the day.
+#: src/dates.rs
+msgctxt "date format"
+msgid "%b %-d"
+msgstr "%-d %b"
+
+#. A chrono date pattern: %a is the weekday and %b the month (both from this catalog), %-d the day, %-m the month as a number, %Y the year, %H:%M the time.
+#. a day in another year, as in "Jan 3 2027".
+#: src/dates.rs
+msgctxt "date format"
+msgid "%b %-d %Y"
+msgstr "%-d %b %Y"
+
+#. A chrono date pattern: %a is the weekday and %b the month (both from this catalog), %-d the day, %-m the month as a number, %Y the year, %H:%M the time.
+#. the date under the clock, as in "Fri, Oct 9".
+#: src/dates.rs
+msgctxt "date format"
+msgid "%a, %b %-d"
+msgstr "%a, %-d %b"
+
+#. A chrono date pattern: %a is the weekday and %b the month (both from this catalog), %-d the day, %-m the month as a number, %Y the year, %H:%M the time.
+#. how a typed date was read, as in "Fri Oct 9, 17:00".
+#: src/dates.rs
+msgctxt "date format"
+msgid "%a %b %-d, %H:%M"
+msgstr "%a, %-d %b, %H:%M"
+
+#: src/dates.rs
+msgid "now"
+msgstr "agora"
+
+#: src/dates.rs
+msgid "{} min"
+msgstr "{} min"
+
+#: src/dates.rs
+msgid "{} h {} min"
+msgstr "{} h {} min"
+
+#: src/dates.rs
+msgid "{} h"
+msgstr "{} h"
+
+#: src/dates.rs
+msgid "{} day"
+msgid_plural "{} days"
+msgstr[0] "{} dia"
+msgstr[1] "{} dias"
+
+#: src/dates.rs
+msgid "in {}"
+msgstr "em {}"
+
+#: src/dates.rs
+msgid "{} ago"
+msgstr "há {}"
+
+#: src/dates.rs
+msgid "just now"
+msgstr "agora mesmo"
+
+#: src/dates.rs
+msgid "{} min ago"
+msgstr "há {} min"
+
+#: src/dates.rs
+msgid "{} h ago"
+msgstr "há {} h"
+
+#: src/dates.rs
+msgid "Yesterday"
+msgstr "Ontem"
+
+#: src/dates.rs
+msgid "There's no day {}-{}."
+msgstr "O dia {1}/{0} não existe."
+
+#: src/dates.rs
+msgid "There's no day {} coming up."
+msgstr "Não há nenhum dia {} em breve."
+
+#: src/i18n.rs
+msgid "English"
+msgstr "Inglês"
+
+#: src/i18n.rs
+msgid "German"
+msgstr "Alemão"
+
+#: src/i18n.rs
+msgid "Spanish"
+msgstr "Espanhol"
+
+#: src/i18n.rs
+msgid "Esperanto"
+msgstr "Esperanto"
+
+#: src/i18n.rs
+msgid "French"
+msgstr "Francês"
+
+#: src/i18n.rs
+msgid "Italian"
+msgstr "Italiano"
+
+#: src/i18n.rs
+msgid "Portuguese (Brazil)"
+msgstr "Português (Brasil)"
+
+#: src/i18n.rs
+msgid "Russian"
+msgstr "Russo"
+
+#: src/i18n.rs
+msgid "Japanese"
+msgstr "Japonês"
+
+#: src/i18n.rs
+msgid "Korean"
+msgstr "Coreano"
+
+#: src/i18n.rs
+msgid "Chinese (Simplified)"
+msgstr "Chinês (simplificado)"
+
+#: src/i18n.rs
+msgid "Chinese (Traditional)"
+msgstr "Chinês (tradicional)"
+
+#: src/model.rs
+msgid "At start"
+msgstr "No início"
+
+#: src/model.rs
+msgid "Before start"
+msgstr "Antes do início"
+
+#: src/model.rs
+msgid "After start"
+msgstr "Depois do início"
+
+#: src/model.rs
+msgid "Before due"
+msgstr "Antes do prazo"
+
+#: src/model.rs
+msgid "At due"
+msgstr "No prazo"
+
+#: src/model.rs
+msgid "Every day"
+msgstr "Todo dia"
+
+#: src/model.rs
+msgid "“{}” isn't a duration. Try 15m, 2h or 1d."
+msgstr "“{}” não é uma duração. Tente 15m, 2h ou 1d."
+
+#: src/model.rs
+msgid "“{}” isn't a time of day. Try 09:00."
+msgstr "“{}” não é um horário. Tente 09:00."
+
+#: src/model.rs
+msgid "Starts {} ({})"
+msgstr "Começa {} ({})"
+
+#: src/model.rs
+msgid "Started {} ({})"
+msgstr "Começou {} ({})"
+
+#: src/model.rs
+msgid "Due {} ({})"
+msgstr "Prazo {} ({})"
+
+#: src/model.rs
+msgid "Was due {} ({})"
+msgstr "Prazo era {} ({})"
+
+#: src/model.rs
+msgid "Couldn't read {} ({}). It was moved to {}."
+msgstr "Não foi possível ler {} ({}). Ele foi movido para {}."
+
+#: src/model.rs
+msgid "Couldn't open {}: {}"
+msgstr "Não foi possível abrir {}: {}"
+
+#: src/model.rs
+msgid "Give it a name."
+msgstr "Dê um nome a ela."
+
+#: src/model.rs
+msgid "That's a long name. Keep it under 40 characters."
+msgstr "É um nome longo. Use menos de 40 caracteres."
+
+#: src/model.rs
+msgid "There's already a category called “{}”."
+msgstr "Já existe uma categoria chamada “{}”."
+
+#: src/platform.rs
+msgid "The program path isn't valid Unicode."
+msgstr "O caminho do programa não é Unicode válido."
+
+#: src/shortcuts.rs
+msgid "{} would get in the way of typing. Add Ctrl or Alt."
+msgstr "{} atrapalharia a digitação. Adicione Ctrl ou Alt."
+
+#: src/shortcuts.rs
+msgid "{} alone is too easy to hit by accident. Add Ctrl, Alt or Shift+Ctrl."
+msgstr "{} sozinho é fácil demais de apertar sem querer. Adicione Ctrl, Alt ou Shift+Ctrl."
+
+#: src/shortcuts.rs
+msgid "{} can't be used as a system-wide key."
+msgstr "{} não pode ser usado como atalho global."
+
+#. A key's name as keyboards in your language print it.
+#: src/shortcuts.rs
+msgctxt "key"
+msgid "Ctrl"
+msgstr "Ctrl"
+
+#. A key's name as keyboards in your language print it.
+#: src/shortcuts.rs ui/settings.slint
+msgctxt "key"
+msgid "Alt"
+msgstr "Alt"
+
+#. A key's name as keyboards in your language print it.
+#: src/shortcuts.rs
+msgctxt "key"
+msgid "Shift"
+msgstr "Shift"
+
+#. A key's name as keyboards in your language print it.
+#: src/shortcuts.rs
+msgctxt "key"
+msgid "Win"
+msgstr "Win"
+
+#. A key's name as keyboards in your language print it.
+#: src/shortcuts.rs
+msgctxt "key"
+msgid "Super"
+msgstr "Super"
+
+#. A key's name as keyboards in your language print it.
+#: src/shortcuts.rs ui/launcher.slint ui/settings.slint
+msgctxt "key"
+msgid "Enter"
+msgstr "Enter"
+
+#. A key's name as keyboards in your language print it.
+#: src/shortcuts.rs
+msgctxt "key"
+msgid "Escape"
+msgstr "Esc"
+
+#. A key's name as keyboards in your language print it.
+#: src/shortcuts.rs ui/launcher.slint ui/settings.slint
+msgctxt "key"
+msgid "Tab"
+msgstr "Tab"
+
+#. A key's name as keyboards in your language print it.
+#: src/shortcuts.rs
+msgctxt "key"
+msgid "Space"
+msgstr "Espaço"
+
+#. A key's name as keyboards in your language print it.
+#: src/shortcuts.rs ui/settings.slint
+msgctxt "key"
+msgid "Backspace"
+msgstr "Backspace"
+
+#. A key's name as keyboards in your language print it.
+#: src/shortcuts.rs ui/settings.slint
+msgctxt "key"
+msgid "Delete"
+msgstr "Delete"
+
+#. A key's name as keyboards in your language print it.
+#: src/shortcuts.rs
+msgctxt "key"
+msgid "Insert"
+msgstr "Insert"
+
+#. A key's name as keyboards in your language print it.
+#: src/shortcuts.rs
+msgctxt "key"
+msgid "Home"
+msgstr "Home"
+
+#. A key's name as keyboards in your language print it.
+#: src/shortcuts.rs
+msgctxt "key"
+msgid "End"
+msgstr "End"
+
+#. A key's name as keyboards in your language print it.
+#: src/shortcuts.rs
+msgctxt "key"
+msgid "PageUp"
+msgstr "PgUp"
+
+#. A key's name as keyboards in your language print it.
+#: src/shortcuts.rs
+msgctxt "key"
+msgid "PageDown"
+msgstr "PgDn"
+
+#. A key's name as keyboards in your language print it.
+#: src/shortcuts.rs ui/launcher.slint ui/settings.slint
+msgctxt "key"
+msgid "Esc"
+msgstr "Esc"
+
+#: ui/app.slint
+msgid "Wisp ({})"
+msgstr "Wisp ({})"
+
+#: ui/app.slint
+msgid "Open Wisp ({})"
+msgstr "Abrir o Wisp ({})"
+
+#: ui/launcher.slint
+msgid "None"
+msgstr "Nenhuma"
+
+#: ui/launcher.slint
+msgctxt "note details"
+msgid "Notes"
+msgstr "Detalhes"
+
+#: ui/launcher.slint
+msgid "Details, links, a checklist… Enter starts a new line."
+msgstr "Detalhes, links, uma lista… Enter começa uma nova linha."
+
+#: ui/launcher.slint
+msgid "Category"
+msgstr "Categoria"
+
+#: ui/launcher.slint
+msgid "Starts"
+msgstr "Início"
+
+#. Dates Wisp must read in your language (the tests check). Separate several with commas. Words for dates are in src/dates/words.rs.
+#: ui/launcher.slint
+msgctxt "date example"
+msgid "tomorrow 9am, fri 14:00, +2h"
+msgstr "amanhã às 9h, sexta 14h, +2h"
+
+#: ui/launcher.slint
+msgid "Due"
+msgstr "Prazo"
+
+#. Dates Wisp must read in your language (the tests check). Separate several with commas. Words for dates are in src/dates/words.rs.
+#: ui/launcher.slint
+msgctxt "date example"
+msgid "fri 17:00, 10-20, next mon"
+msgstr "sexta 17h, 20/10, próxima segunda"
+
+#: ui/launcher.slint
+msgid "Set a start or due time first"
+msgstr "Defina um início ou um prazo primeiro"
+
+#. A key's name as keyboards in your language print it.
+#: ui/launcher.slint
+msgctxt "key"
+msgid "Del"
+msgstr "Del"
+
+#: ui/launcher.slint
+msgid "Change type"
+msgstr "Mudar tipo"
+
+#: ui/launcher.slint
+msgid "Remove reminder"
+msgstr "Remover lembrete"
+
+#: ui/launcher.slint
+msgid "Save and close"
+msgstr "Salvar e fechar"
+
+#: ui/launcher.slint
+msgid "New line"
+msgstr "Nova linha"
+
+#: ui/launcher.slint
+msgid "No category"
+msgstr "Sem categoria"
+
+#: ui/launcher.slint
+msgid "Add reminder"
+msgstr "Adicionar lembrete"
+
+#: ui/launcher.slint
+msgid "Go to notes"
+msgstr "Ir aos detalhes"
+
+#: ui/launcher.slint
+msgid "Mark done"
+msgstr "Concluir"
+
+#: ui/launcher.slint ui/settings.slint
+msgid "Back"
+msgstr "Voltar"
+
+#: ui/launcher.slint
+msgid "Scroll"
+msgstr "Rolar"
+
+#: ui/launcher.slint
+msgid "Open"
+msgstr "Abrir"
+
+#: ui/launcher.slint
+msgid "Bring back"
+msgstr "Trazer de volta"
+
+#: ui/launcher.slint
+msgid "Browse"
+msgstr "Navegar"
+
+#: ui/launcher.slint
+msgid "Shortcuts"
+msgstr "Atalhos"
+
+#: ui/launcher.slint ui/settings.slint
+msgid "Save"
+msgstr "Salvar"
+
+#: ui/launcher.slint
+msgid "Save with a date"
+msgstr "Salvar com data"
+
+#: ui/launcher.slint
+msgid "Search what's done"
+msgstr "Pesquisar nas concluídas"
+
+#: ui/launcher.slint
+msgid "Type a thought. Enter saves it."
+msgstr "Digite uma ideia. Enter salva."
+
+#: ui/launcher.slint
+msgid "Title"
+msgstr "Título"
+
+#: ui/launcher.slint
+msgid "All"
+msgstr "Todas"
+
+#: ui/settings.slint
+msgid "Light"
+msgstr "Claro"
+
+#: ui/settings.slint
+msgid "Dark"
+msgstr "Escuro"
+
+#: ui/settings.slint
+msgid "Name, like Work"
+msgstr "Nome, como Trabalho"
+
+#: ui/settings.slint
+msgid "Press the new keys…"
+msgstr "Pressione as novas teclas…"
+
+#: ui/settings.slint
+msgid "On"
+msgstr "Ativado"
+
+#: ui/settings.slint
+msgid "Off"
+msgstr "Desativado"
+
+#: ui/settings.slint
+msgid "Wisp Settings"
+msgstr "Configurações do Wisp"
+
+#: ui/settings.slint
+msgid "Keep the old keys"
+msgstr "Manter as teclas antigas"
+
+#: ui/settings.slint
+msgid "Cancel"
+msgstr "Cancelar"
+
+#: ui/settings.slint
+msgid "Choose a page"
+msgstr "Escolher uma página"
+
+#: ui/settings.slint
+msgid "Open it"
+msgstr "Abrir"
+
+#: ui/settings.slint
+msgid "Close"
+msgstr "Fechar"
+
+#: ui/settings.slint
+msgid "Rename"
+msgstr "Renomear"
+
+#: ui/settings.slint
+msgid "Color"
+msgstr "Cor"
+
+#: ui/settings.slint
+msgid "Move"
+msgstr "Mover"
+
+#: ui/settings.slint
+msgid "Remove"
+msgstr "Remover"
+
+#: ui/settings.slint
+msgid "Change keys"
+msgstr "Mudar teclas"
+
+#: ui/settings.slint
+msgid "Use default"
+msgstr "Usar padrão"
+
+#: ui/settings.slint
+msgid "Pages"
+msgstr "Páginas"
+
+#: ui/settings.slint
+msgid "Change"
+msgstr "Mudar"
+
+#: ui/settings.slint
+msgid "Switch"
+msgstr "Alternar"

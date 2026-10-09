@@ -2,7 +2,12 @@ use std::env;
 use std::path::PathBuf;
 
 fn main() {
-    slint_build::compile("ui/app.slint").expect("failed to compile the Slint UI");
+    // The window text's translations come from the same catalogs as Rust's (see src/i18n.rs).
+    // Messages carry no context unless they name one, so both sides look them up alike.
+    let config = slint_build::CompilerConfiguration::new()
+        .with_bundled_translations("lang")
+        .with_default_translation_context(slint_build::DefaultTranslationContext::None);
+    slint_build::compile_with_config("ui/app.slint", config).expect("failed to compile the Slint UI");
     windows_resources();
 }
 

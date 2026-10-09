@@ -5567,6 +5567,7 @@ dependencies = [
  "serde_json",
  "slint",
  "slint-build",
+ "sys-locale",
  "windows-registry",
  "windows-sys 0.61.2",
 ]

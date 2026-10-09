@@ -159,7 +159,7 @@ component ThemeTile inherits Rectangle {
                 }
             }
             Text {
-                text: root.mode == 0 ? "Match system" : root.mode == 1 ? "Light" : "Dark";
+                text: root.mode == 0 ? @tr("Match system") : root.mode == 1 ? @tr("Light") : @tr("Dark");
                 font-size: 13px;
                 color: Theme.text;
             }
@@ -243,7 +243,7 @@ component SettingCardView inherits Rectangle {
                     }
                     if root.card.editing : InputBox {
                         text <=> root.edit-text;
-                        placeholder: "Name, like Work";
+                        placeholder: @tr("Name, like Work");
                         init => { self.take-focus(); }
                     }
                     if root.card.description != "" || root.card.error != "" : Text {
@@ -257,7 +257,7 @@ component SettingCardView inherits Rectangle {
                     horizontal-stretch: 0;
                     alignment: center;
                     if root.recording : Keycap {
-                        text: "Press the new keys…";
+                        text: @tr("Press the new keys…");
                         live: true;
                     }
                     if !root.recording : KeyCombo { keys: root.card.keys; }
@@ -266,7 +266,7 @@ component SettingCardView inherits Rectangle {
                     horizontal-stretch: 0;
                     spacing: 12px;
                     Text {
-                        text: root.card.on ? "On" : "Off";
+                        text: root.card.on ? @tr("On") : @tr("Off");
                         font-size: 13px;
                         color: Theme.text-2;
                         vertical-alignment: center;
@@ -289,6 +289,25 @@ component SettingCardView inherits Rectangle {
                     font-size: 13px;
                     color: Theme.text-2;
                     vertical-alignment: center;
+                }
+                // A choice among several, like the language.
+                if root.card.kind == 7 : VerticalLayout {
+                    horizontal-stretch: 0;
+                    alignment: center;
+                    Rectangle {
+                        width: 18px;
+                        height: 18px;
+                        border-radius: 9px;
+                        border-width: root.card.on ? 0px : 1.5px;
+                        border-color: Theme.text-2;
+                        background: root.card.on ? Theme.accent : transparent;
+                        Rectangle {
+                            width: 7px;
+                            height: 7px;
+                            border-radius: 3.5px;
+                            background: root.card.on ? Theme.on-accent : transparent;
+                        }
+                    }
                 }
                 if root.card.kind == 6 && !root.card.editing : VerticalLayout {
                     horizontal-stretch: 0;
@@ -313,7 +332,7 @@ component SettingCardView inherits Rectangle {
 }
 
 export component SettingsWindow inherits Window {
-    title: "Wisp Settings";
+    title: @tr("Wisp Settings");
     preferred-width: 880px;
     preferred-height: 620px;
     min-width: 760px;
@@ -365,33 +384,36 @@ export component SettingsWindow inherits Window {
     changed cursor => { root.reveal(); }
     changed page => { flick.content-y = 0; }
 
+    property <string> esc: @tr("key" => "Esc");
+    property <string> enter: @tr("key" => "Enter");
+    property <string> tab: @tr("key" => "Tab");
     property <[KeyHint]> hints: root.recording ? [
-        { keys: "Esc", label: "Keep the old keys" },
+        { keys: root.esc, label: @tr("Keep the old keys") },
     ] : root.editing ? [
-        { keys: "Enter", label: "Save" },
-        { keys: "Esc", label: "Cancel" },
+        { keys: root.enter, label: @tr("Save") },
+        { keys: root.esc, label: @tr("Cancel") },
     ] : root.nav-active ? [
-        { keys: "↑ ↓", label: "Choose a page" },
-        { keys: "Enter", label: "Open it" },
-        { keys: "Esc", label: "Close" },
+        { keys: "↑ ↓", label: @tr("Choose a page") },
+        { keys: root.enter, label: @tr("Open it") },
+        { keys: root.esc, label: @tr("Close") },
     ] : root.cursor-on-category ? [
-        { keys: "Enter", label: "Rename" },
-        { keys: "← →", label: "Color" },
-        { keys: "Alt+↑ ↓", label: "Move" },
-        { keys: "Del", label: "Remove" },
-        { keys: "Esc", label: "Back" },
+        { keys: root.enter, label: @tr("Rename") },
+        { keys: "← →", label: @tr("Color") },
+        { keys: @tr("key" => "Alt") + "+↑ ↓", label: @tr("Move") },
+        { keys: @tr("key" => "Delete"), label: @tr("Remove") },
+        { keys: root.esc, label: @tr("Back") },
     ] : root.cursor-on-shortcut ? [
-        { keys: "↑ ↓", label: "Move" },
-        { keys: "Enter", label: "Change keys" },
-        { keys: "Backspace", label: "Use default" },
-        { keys: "Tab", label: "Pages" },
-        { keys: "Esc", label: "Back" },
+        { keys: "↑ ↓", label: @tr("Move") },
+        { keys: root.enter, label: @tr("Change keys") },
+        { keys: @tr("key" => "Backspace"), label: @tr("Use default") },
+        { keys: root.tab, label: @tr("Pages") },
+        { keys: root.esc, label: @tr("Back") },
     ] : [
-        { keys: "↑ ↓", label: "Move" },
-        { keys: "Enter", label: "Change" },
-        { keys: "← →", label: "Switch" },
-        { keys: "Tab", label: "Pages" },
-        { keys: "Esc", label: "Back" },
+        { keys: "↑ ↓", label: @tr("Move") },
+        { keys: root.enter, label: @tr("Change") },
+        { keys: "← →", label: @tr("Switch") },
+        { keys: root.tab, label: @tr("Pages") },
+        { keys: root.esc, label: @tr("Back") },
     ];
 
     router := FocusScope {
@@ -430,7 +452,7 @@ export component SettingsWindow inherits Window {
                                 color: Theme.text;
                             }
                             Text {
-                                text: "Settings";
+                                text: @tr("Settings");
                                 font-size: 12px;
                                 color: Theme.text-3;
                             }

@@ -13,22 +13,22 @@ export component Tray inherits SystemTrayIcon {
     callback quit-app();
 
     icon: root.app-icon;
-    tooltip: "Wisp (" + root.summon-label + ")";
+    tooltip: @tr("Wisp ({})", root.summon-label);
     title: "Wisp";
     clicked => { root.open-app(); }
 
     Menu {
         MenuItem {
-            title: "Open Wisp (" + root.summon-label + ")";
+            title: @tr("Open Wisp ({})", root.summon-label);
             activated => { root.open-app(); }
         }
         MenuItem {
-            title: "Settings";
+            title: @tr("Settings");
             activated => { root.open-settings(); }
         }
         MenuSeparator {}
         MenuItem {
-            title: "Quit Wisp";
+            title: @tr("Quit Wisp");
             activated => { root.quit-app(); }
         }
     }

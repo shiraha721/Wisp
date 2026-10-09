@@ -37,6 +37,8 @@ pub enum Action {
     Quit,
 }
 
+/// A shortcut's details. `group`, `label` and `description` are English; pass
+/// them through `i18n::tr` to show them.
 pub struct ActionInfo {
     pub action: Action,
     pub id: &'static str,
@@ -51,105 +53,105 @@ pub const ACTIONS: &[ActionInfo] = &[
     ActionInfo {
         action: Action::Schedule,
         id: "schedule",
-        group: "Writing",
-        label: "Save and add dates",
-        description: "Saves what you typed and opens its start, due time and reminders",
+        group: tr_noop!("Writing"),
+        label: tr_noop!("Save and add dates"),
+        description: tr_noop!("Saves what you typed and opens its start, due time and reminders"),
         default: "Ctrl+Enter",
     },
     ActionInfo {
         action: Action::Open,
         id: "open",
-        group: "Your notes",
-        label: "Open the selected note",
-        description: "Enter does the same",
+        group: tr_noop!("Your notes"),
+        label: tr_noop!("Open the selected note"),
+        description: tr_noop!("Enter does the same"),
         default: "Ctrl+E",
     },
     ActionInfo {
         action: Action::ToggleDone,
         id: "toggle_done",
-        group: "Your notes",
-        label: "Mark done / bring back",
-        description: "Done notes move to the Done list instead of being deleted",
+        group: tr_noop!("Your notes"),
+        label: tr_noop!("Mark done / bring back"),
+        description: tr_noop!("Done notes move to the Done list instead of being deleted"),
         default: "Ctrl+D",
     },
     ActionInfo {
         action: Action::Category,
         id: "category",
-        group: "Your notes",
-        label: "Change category",
-        description: "Of the selected note, the note you're editing, or what you're typing. Add Shift to go back",
+        group: tr_noop!("Your notes"),
+        label: tr_noop!("Change category"),
+        description: tr_noop!("Of the selected note, the note you're editing, or what you're typing. Add Shift to go back"),
         default: "Ctrl+T",
     },
     ActionInfo {
         action: Action::Delete,
         id: "delete",
-        group: "Your notes",
-        label: "Delete",
-        description: "Removes the note; Undo brings it back",
+        group: tr_noop!("Your notes"),
+        label: tr_noop!("Delete"),
+        description: tr_noop!("Removes the note; Undo brings it back"),
         default: "Ctrl+Delete",
     },
     ActionInfo {
         action: Action::Undo,
         id: "undo",
-        group: "Your notes",
-        label: "Undo",
-        description: "Reverts the last change to your notes",
+        group: tr_noop!("Your notes"),
+        label: tr_noop!("Undo"),
+        description: tr_noop!("Reverts the last change to your notes"),
         default: "Ctrl+Z",
     },
     ActionInfo {
         action: Action::AddReminder,
         id: "add_reminder",
-        group: "Editing a note",
-        label: "Add a reminder",
-        description: "Reminders follow the start or due time, so set one of those first",
+        group: tr_noop!("Editing a note"),
+        label: tr_noop!("Add a reminder"),
+        description: tr_noop!("Reminders follow the start or due time, so set one of those first"),
         default: "Ctrl+R",
     },
     ActionInfo {
         action: Action::RemoveReminder,
         id: "remove_reminder",
-        group: "Editing a note",
-        label: "Remove a reminder",
-        description: "Removes the reminder you're on, or the last one",
+        group: tr_noop!("Editing a note"),
+        label: tr_noop!("Remove a reminder"),
+        description: tr_noop!("Removes the reminder you're on, or the last one"),
         default: "Ctrl+Shift+R",
     },
     ActionInfo {
         action: Action::Inbox,
         id: "inbox",
-        group: "Moving around",
-        label: "Show notes",
-        description: "Your open notes and to-dos",
+        group: tr_noop!("Moving around"),
+        label: tr_noop!("Show notes"),
+        description: tr_noop!("Your open notes and to-dos"),
         default: "Ctrl+1",
     },
     ActionInfo {
         action: Action::Archive,
         id: "archive",
-        group: "Moving around",
-        label: "Show done",
-        description: "Everything you've marked done",
+        group: tr_noop!("Moving around"),
+        label: tr_noop!("Show done"),
+        description: tr_noop!("Everything you've marked done"),
         default: "Ctrl+2",
     },
     ActionInfo {
         action: Action::Help,
         id: "help",
-        group: "Moving around",
-        label: "Keyboard shortcuts",
-        description: "Lists every key in the Wisp window",
+        group: tr_noop!("Moving around"),
+        label: tr_noop!("Keyboard shortcuts"),
+        description: tr_noop!("Lists every key in the Wisp window"),
         default: "F1",
     },
     ActionInfo {
         action: Action::Settings,
         id: "settings",
-        group: "Moving around",
-        label: "Open settings",
-        description: "This window",
+        group: tr_noop!("Moving around"),
+        label: tr_noop!("Open settings"),
+        description: tr_noop!("This window"),
         default: "Ctrl+,",
     },
     ActionInfo {
         action: Action::Quit,
         id: "quit",
-        group: "Wisp",
-        label: "Quit Wisp",
-        description: "Closes Wisp completely; the hotkey stops working until it starts again",
+        group: tr_noop!("Wisp"),
+        label: tr_noop!("Quit Wisp"),
+        description: tr_noop!("Closes Wisp completely; the hotkey stops working until it starts again"),
         default: "Ctrl+Q",
     },
 ];
@@ -187,6 +189,8 @@ pub struct Config {
     /// Show the window when a reminder rings, not only a notification.
     pub open_on_reminder: bool,
     pub theme: Theme,
+    /// A language code from `i18n::LANGUAGES`, or "system" to follow the system's language.
+    pub language: String,
     /// Set after the first start, when autostart is switched on.
     pub initialized: bool,
 }
@@ -201,6 +205,7 @@ impl Default for Config {
             hide_when_inactive: true,
             open_on_reminder: false,
             theme: Theme::System,
+            language: "en".into(),
             initialized: false,
         }
     }
@@ -216,7 +221,7 @@ impl Config {
                     }
                     (cfg, None)
                 }
-                Err(err) => (Config::default(), Some(format!("Settings file has an error ({err}); using defaults."))),
+                Err(err) => (Config::default(), Some(tr!("Settings file has an error ({}); using defaults.", err))),
             },
             Err(_) => (Config::default(), None),
         }
@@ -270,10 +275,11 @@ impl Config {
         ACTIONS.iter().map(|a| a.action).find(|&a| self.combo(a) == *combo)
     }
 
-    /// Which binding (action id or "summon") already uses `combo`, other than `except`.
+    /// Which binding (its English label) already uses `combo`, other than `except`
+    /// (an action id or "summon").
     pub fn conflict(&self, combo: &Combo, except: &str) -> Option<&'static str> {
         if except != "summon" && self.summon_combo() == *combo {
-            return Some("Summon Wisp");
+            return Some(tr_noop!("Open Wisp from anywhere"));
         }
         ACTIONS.iter().find(|a| a.id != except && self.combo(a.action) == *combo).map(|a| a.label)
     }

@@ -19,8 +19,16 @@ pub enum Rule {
     Daily { minute_of_day: Option<u32> },
 }
 
-/// Labels for the kind picker in the editor, indexed by [`Rule::kind`].
-pub const RULE_KINDS: [&str; 6] = ["At start", "Before start", "After start", "Before due", "At due", "Every day"];
+/// Labels for the kind picker in the editor, indexed by [`Rule::kind`] (English;
+/// pass them through `i18n::tr`).
+pub const RULE_KINDS: [&str; 6] = [
+    tr_noop!("At start"),
+    tr_noop!("Before start"),
+    tr_noop!("After start"),
+    tr_noop!("Before due"),
+    tr_noop!("At due"),
+    tr_noop!("Every day"),
+];
 
 impl Rule {
     pub fn kind(&self) -> usize {
@@ -37,7 +45,7 @@ impl Rule {
     /// Builds a rule from the editor's kind index and its free-text amount.
     pub fn from_parts(kind: usize, amount: &str) -> Result<Rule, String> {
         let minutes = || {
-            dates::parse_minutes(amount).ok_or_else(|| format!("“{amount}” isn't a duration. Try 15m, 2h or 1d."))
+            dates::parse_minutes(amount).ok_or_else(|| tr!("“{}” isn't a duration. Try 15m, 2h or 1d.", amount))
         };
         Ok(match kind {
             0 => Rule::AtStart,
@@ -49,8 +57,7 @@ impl Rule {
                 minute_of_day: if amount.trim().is_empty() {
                     None
                 } else {
-                    let t = dates::parse_clock(amount)
-                        .ok_or_else(|| format!("“{amount}” isn't a time of day. Try 09:00."))?;
+                    let t = dates::parse_clock(amount).ok_or_else(|| tr!("“{}” isn't a time of day. Try 09:00.", amount))?;
                     Some(t.hour() * 60 + t.minute())
                 },
             },
@@ -348,12 +355,15 @@ where
     let tz = now.timezone();
     let at = |t: i64| tz.timestamp_opt(t, 0).single();
     let mut lines = Vec::new();
-    for (time, upcoming, passed) in [(item.start, "Starts", "Started"), (item.due, "Due", "Was due")] {
-        if let Some(t) = time.and_then(at) {
-            let delta = t.timestamp() - now.timestamp();
-            let verb = if delta > 0 { upcoming } else { passed };
-            lines.push(format!("{verb} {} ({})", dates::day_label(&t, now), dates::relative(delta)));
-        }
+    if let Some(t) = item.start.and_then(at) {
+        let delta = t.timestamp() - now.timestamp();
+        let (day, relative) = (dates::day_label_inline(&t, now), dates::relative(delta));
+        lines.push(if delta > 0 { tr!("Starts {} ({})", day, relative) } else { tr!("Started {} ({})", day, relative) });
+    }
+    if let Some(t) = item.due.and_then(at) {
+        let delta = t.timestamp() - now.timestamp();
+        let (day, relative) = (dates::day_label_inline(&t, now), dates::relative(delta));
+        lines.push(if delta > 0 { tr!("Due {} ({})", day, relative) } else { tr!("Was due {} ({})", day, relative) });
     }
     if item.has_notes() {
         lines.push(item.notes_preview().to_owned());
@@ -391,13 +401,13 @@ impl Store {
                 Err(err) => {
                     let backup = path.with_extension(format!("broken-{}.json", chrono::Local::now().format("%Y%m%d-%H%M%S")));
                     let _ = std::fs::rename(path, &backup);
-                    warning = Some(format!("Couldn't read {} ({err}). It was moved to {}.", path.display(), backup.display()));
+                    warning = Some(tr!("Couldn't read {} ({}). It was moved to {}.", path.display(), err, backup.display()));
                     Data::default()
                 }
             },
             Err(err) if err.kind() == std::io::ErrorKind::NotFound => Data::default(),
             Err(err) => {
-                warning = Some(format!("Couldn't open {}: {err}", path.display()));
+                warning = Some(tr!("Couldn't open {}: {}", path.display(), err));
                 Data::default()
             }
         };
@@ -566,13 +576,13 @@ impl Store {
         let name = name.split_whitespace().collect::<Vec<_>>().join(" ");
         let name = name.trim_start_matches(['#', '＃']).trim().to_owned();
         if loose(&name).is_empty() {
-            return Err("Give it a name.".into());
+            return Err(tr!("Give it a name.").into());
         }
         if name.chars().count() > 40 {
-            return Err("That's a long name. Keep it under 40 characters.".into());
+            return Err(tr!("That's a long name. Keep it under 40 characters.").into());
         }
         if let Some(other) = self.categories().iter().find(|c| Some(c.id) != except && loose(&c.name) == loose(&name)) {
-            return Err(format!("There's already a category called “{}”.", other.name));
+            return Err(tr!("There's already a category called “{}”.", other.name));
         }
         Ok(name)
     }

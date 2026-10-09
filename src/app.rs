@@ -8,6 +8,7 @@ mod settings;
 
 use crate::config::{self, Action, Config, Theme};
 use crate::dates;
+use crate::i18n;
 use crate::model::{self, Category, Item, Store};
 use crate::platform;
 use crate::shortcuts::Combo;
@@ -108,14 +109,17 @@ pub struct App {
 
 impl App {
     pub fn new(ui: &AppWindow, settings_ui: SettingsWindow, data_dir: PathBuf, portable: bool) -> App {
+        let config_path = data_dir.join("settings.json");
+        let (mut config, config_warning) = Config::load(&config_path);
+        // The language first: everything after this may have something to say.
+        i18n::apply(&config.language);
         let (mut store, store_warning) = Store::load(&data_dir.join("notes.json"));
-        if store.seed_categories(&["Daily", "Work", "School"]) && store_warning.is_none() {
+        // A new notes file starts with a few categories, named in the language Wisp speaks.
+        if store.seed_categories(&[tr!("Daily"), tr!("Work"), tr!("School")]) && store_warning.is_none() {
             if let Err(err) = store.save() {
                 eprintln!("wisp: couldn't save notes: {err}");
             }
         }
-        let config_path = data_dir.join("settings.json");
-        let (mut config, config_warning) = Config::load(&config_path);
 
         if !config.initialized {
             // Turn on "start with the computer" once, for release builds.
@@ -166,7 +170,7 @@ impl App {
 
         match GlobalHotKeyManager::new() {
             Ok(manager) => app.hotkeys = Some(manager),
-            Err(err) => app.summon_problem = Some(format!("System-wide keys aren't available here ({err}).")),
+            Err(err) => app.summon_problem = Some(tr!("System-wide keys aren't available here ({}).", err)),
         }
         app.claim_summon();
 
@@ -179,9 +183,9 @@ impl App {
             let settings = app.label(Action::Settings);
             let working = app.summon.is_some();
             let message = if working {
-                format!("{problem} Change it in Settings ({settings}).")
+                tr!("{} Change it in Settings ({}).", problem, settings)
             } else {
-                format!("{problem} Pick another key in Settings ({settings}).")
+                tr!("{} Pick another key in Settings ({}).", problem, settings)
             };
             app.toast_for(message, !working, Duration::from_secs(20));
         }
@@ -191,7 +195,7 @@ impl App {
     /// Tells the user where their notes went when they were copied to the portable folder.
     pub fn announce_move(&mut self, from: &str, to: &str) {
         debug_log!("copied notes from {from} to {to}");
-        self.toast_for(format!("Your notes now live next to Wisp, in {to}"), false, Duration::from_secs(12));
+        self.toast_for(tr!("Your notes now live next to Wisp, in {}", to), false, Duration::from_secs(12));
     }
 
     pub fn set_tray(&mut self, tray: Option<crate::Tray>) {
@@ -211,13 +215,13 @@ impl App {
 
     fn persist(&mut self) {
         if let Err(err) = self.store.save() {
-            self.toast(format!("Couldn't save notes: {err}"), true);
+            self.toast(tr!("Couldn't save notes: {}", err), true);
         }
     }
 
     fn save_config(&mut self) {
         if let Err(err) = self.config.save(&self.config_path) {
-            self.settings_toast(format!("Couldn't save settings: {err}"), true);
+            self.settings_toast(tr!("Couldn't save settings: {}", err), true);
         }
     }
 
@@ -432,7 +436,7 @@ impl App {
                 } else if selected >= 0 {
                     self.open_selected(editor::FIELD_START);
                 } else {
-                    self.toast("Type a note first, then add its dates.", false);
+                    self.toast(tr!("Type a note first, then add its dates."), false);
                 }
             }
             Action::Open => {
@@ -443,7 +447,7 @@ impl App {
             }
             Action::ToggleDone => match self.selected_item_id() {
                 Some(id) => self.toggle_done(id),
-                None => self.toast("Pick a note with ↓ first.", false),
+                None => self.toast(tr!("Pick a note with ↓ first."), false),
             },
             Action::Category => {
                 let step = self.category_step(combo);
@@ -454,7 +458,7 @@ impl App {
             }
             Action::Delete => match self.selected_item_id() {
                 Some(id) => self.delete(id),
-                None => self.toast("Pick a note with ↓ first.", false),
+                None => self.toast(tr!("Pick a note with ↓ first."), false),
             },
             Action::Undo => {
                 // Undo whatever happened last: typing in the box, or a change to a note.
@@ -465,7 +469,7 @@ impl App {
                 self.undo();
             }
             Action::AddReminder | Action::RemoveReminder => {
-                self.toast("Open a note (Enter) to change its reminders.", false);
+                self.toast(tr!("Open a note (Enter) to change its reminders."), false);
             }
             other => self.global_action(other),
         }
@@ -618,8 +622,8 @@ impl App {
         } else {
             let undo = self.label(Action::Undo);
             match category {
-                Some(c) => self.toast(format!("Saved to {}. {undo} takes it back.", c.name), false),
-                None => self.toast(format!("Saved. {undo} takes it back."), false),
+                Some(c) => self.toast(tr!("Saved to {}. {} takes it back.", c.name, undo), false),
+                None => self.toast(tr!("Saved. {} takes it back.", undo), false),
             }
         }
     }
@@ -653,7 +657,7 @@ impl App {
             return false;
         }
         let settings = self.label(Action::Settings);
-        self.toast(format!("There are no categories yet. Add some in Settings ({settings})."), false);
+        self.toast(tr!("There are no categories yet. Add some in Settings ({}).", settings), false);
         true
     }
 
@@ -674,8 +678,8 @@ impl App {
         self.persist();
         self.refresh();
         match name {
-            Some(name) => self.toast(format!("Moved to {name}."), false),
-            None => self.toast("Took it out of its category.", false),
+            Some(name) => self.toast(tr!("Moved to {}.", name), false),
+            None => self.toast(tr!("Took it out of its category."), false),
         }
     }
 
@@ -720,11 +724,11 @@ impl App {
         let before = item.clone();
         let message = if item.done_at.is_some() {
             item.done_at = None;
-            "Back in your notes.".to_owned()
+            tr!("Back in your notes.").to_owned()
         } else {
             item.done_at = Some(now);
             item.ringing = false;
-            format!("Done, and moved to the Done list. {undo} to undo.")
+            tr!("Done, and moved to the Done list. {} to undo.", undo)
         };
         self.remember(UndoStep::Changed(before));
         self.persist();
@@ -738,7 +742,7 @@ impl App {
         self.persist();
         self.refresh();
         let undo = self.label(Action::Undo);
-        self.toast(format!("Deleted. {undo} brings it back."), false);
+        self.toast(tr!("Deleted. {} brings it back.", undo), false);
     }
 
     fn remember(&mut self, step: UndoStep) {
@@ -752,7 +756,7 @@ impl App {
 
     fn undo(&mut self) {
         let Some(step) = self.undo.pop() else {
-            self.toast("Nothing to undo.", false);
+            self.toast(tr!("Nothing to undo."), false);
             return;
         };
         let restored = match step {
@@ -768,19 +772,19 @@ impl App {
                         ui.set_query(text.into());
                     }
                 }
-                self.toast("Unsaved. The text is back in the box.", false);
+                self.toast(tr!("Unsaved. The text is back in the box."), false);
                 None
             }
             UndoStep::Removed { pos, item } => {
                 let id = item.id;
                 self.store.insert(pos, item);
-                self.toast("Restored.", false);
+                self.toast(tr!("Restored."), false);
                 Some(id)
             }
             UndoStep::Changed(before) => {
                 let id = before.id;
                 self.store.replace(before);
-                self.toast("Undone.", false);
+                self.toast(tr!("Undone."), false);
                 Some(id)
             }
         };
@@ -804,7 +808,7 @@ impl App {
         let now_ts = now.timestamp();
         self.last_minute = now_ts / 60;
         ui.set_clock_time(now.format("%H:%M").to_string().into());
-        ui.set_clock_date(now.format("%a, %b %-d").to_string().into());
+        ui.set_clock_date(dates::header_date(&now).into());
 
         let archive = self.listing == View::Archive;
         // A `#category` word in the input shows only that category.
@@ -827,9 +831,9 @@ impl App {
             for i in &items {
                 let day = at(i.done_at.unwrap_or(0));
                 sections.push(match (now.date_naive() - day.date_naive()).num_days() {
-                    0 => "Done today".into(),
-                    1 => "Done yesterday".into(),
-                    _ => format!("Done {}", dates::age_label(&day, &now)),
+                    0 => tr!("Done today").to_owned(),
+                    1 => tr!("Done yesterday").to_owned(),
+                    _ => tr!("Done {}", dates::short_date(&day, &now)),
                 });
             }
         } else {
@@ -837,8 +841,8 @@ impl App {
             let (mut scheduled, mut notes): (Vec<&Item>, Vec<&Item>) = items.into_iter().partition(|i| i.is_scheduled());
             scheduled.sort_by_key(|i| (rank(i), i.schedule_key(now_ts)));
             notes.sort_by_key(|i| std::cmp::Reverse((i.created, i.id)));
-            sections.extend(scheduled.iter().map(|_| "Scheduled".to_owned()));
-            sections.extend(notes.iter().map(|_| "Notes".to_owned()));
+            sections.extend(scheduled.iter().map(|_| tr!("Scheduled").to_owned()));
+            sections.extend(notes.iter().map(|_| tr!("Notes").to_owned()));
             items = scheduled.into_iter().chain(notes).collect();
         }
 
@@ -848,12 +852,17 @@ impl App {
             let section = if index == 0 || sections[index] != sections[index - 1] { sections[index].clone() } else { String::new() };
             let start = match item.start {
                 Some(s) if !archive && (s > now_ts || item.due.is_none()) => {
-                    format!("{} {}", if s > now_ts { "Starts" } else { "Started" }, mid_sentence(dates::day_label(&at(s), &now)))
+                    let day = dates::day_label_inline(&at(s), &now);
+                    if s > now_ts {
+                        tr!("Starts {}", day)
+                    } else {
+                        tr!("Started {}", day)
+                    }
                 }
                 _ => String::new(),
             };
             let due = match item.due {
-                Some(d) if !archive => format!("Due {}", mid_sentence(dates::day_label(&at(d), &now))),
+                Some(d) if !archive => tr!("Due {}", dates::day_label_inline(&at(d), &now)),
                 _ => String::new(),
             };
             let note = if archive {
@@ -915,22 +924,22 @@ impl App {
         let typed = !query.trim().is_empty();
         let total = if archive { done_count } else { open_count };
         let shown = self.rows.len();
-        ui.set_status(if (typed || filter.is_some()) && total > 0 { format!("{shown} of {total} match").into() } else { SharedString::new() });
+        ui.set_status(if (typed || filter.is_some()) && total > 0 { tr!("{} of {} match", shown, total).into() } else { SharedString::new() });
 
         let summon = self.summon_label();
         let category = filter.and_then(|c| self.store.category(c)).map(|c| c.name.clone());
         let (title, body) = match (archive, typed, category) {
-            (false, false, Some(name)) => (format!("Nothing in {name} yet"), "Type a note and press Enter to file it here.".to_owned()),
-            (true, false, Some(name)) => (format!("Nothing done in {name} yet"), String::new()),
+            (false, false, Some(name)) => (tr!("Nothing in {} yet", name), tr!("Type a note and press Enter to file it here.").to_owned()),
+            (true, false, Some(name)) => (tr!("Nothing done in {} yet", name), String::new()),
             (false, false, None) if self.store.data.items.is_empty() => {
-                ("Nothing written yet".to_owned(), format!("Type above and press Enter. {summon} opens Wisp from any app."))
+                (tr!("Nothing written yet").to_owned(), tr!("Type above and press Enter. {} opens Wisp from any app.", summon))
             }
-            (false, false, None) => ("All clear".to_owned(), "Notes you mark done wait in the Done tab.".to_owned()),
-            (false, true, _) if open_count == 0 => ("Press Enter to save it".to_owned(), String::new()),
-            (false, true, Some(name)) => ("No notes match".to_owned(), format!("Press Enter to save this as a new note in {name}.")),
-            (false, true, None) => ("No notes match".to_owned(), "Press Enter to save this as a new note.".to_owned()),
-            (true, false, None) => ("Nothing done yet".to_owned(), format!("Mark a note done with {} and it moves here.", self.label(Action::ToggleDone))),
-            (true, true, _) => ("Nothing done matches".to_owned(), String::new()),
+            (false, false, None) => (tr!("All clear").to_owned(), tr!("Notes you mark done wait in the Done tab.").to_owned()),
+            (false, true, _) if open_count == 0 => (tr!("Press Enter to save it").to_owned(), String::new()),
+            (false, true, Some(name)) => (tr!("No notes match").to_owned(), tr!("Press Enter to save this as a new note in {}.", name)),
+            (false, true, None) => (tr!("No notes match").to_owned(), tr!("Press Enter to save this as a new note.").to_owned()),
+            (true, false, None) => (tr!("Nothing done yet").to_owned(), tr!("Mark a note done with {} and it moves here.", self.label(Action::ToggleDone))),
+            (true, true, _) => (tr!("Nothing done matches").to_owned(), String::new()),
         };
         ui.set_empty_title(title.into());
         ui.set_empty_body(body.into());
@@ -968,7 +977,7 @@ impl App {
                         });
                     });
                 });
-                self.toast_for(format!("Reminder: {title}"), false, Duration::from_secs(20));
+                self.toast_for(tr!("Reminder: {}", title), false, Duration::from_secs(20));
             }
         }
         if !fired.is_empty() && self.config.open_on_reminder && !self.ui().window().is_visible() {
@@ -998,11 +1007,7 @@ impl App {
             Err(err) if self.config.summon.is_empty() => {
                 let fallback: Combo = config::FALLBACK_SUMMON.parse().expect("the fallback summon key parses");
                 match self.register_summon(&fallback) {
-                    Ok(()) => Some(format!(
-                        "{} is taken by another program, so Wisp opens with {} for now.",
-                        wanted.label(),
-                        fallback.label()
-                    )),
+                    Ok(()) => Some(tr!("{} is taken by another program, so Wisp opens with {} for now.", wanted.label(), fallback.label())),
                     Err(_) => Some(err),
                 }
             }
@@ -1011,14 +1016,14 @@ impl App {
     }
 
     fn register_summon(&mut self, combo: &Combo) -> Result<(), String> {
-        let manager = self.hotkeys.as_ref().ok_or_else(|| "System-wide keys aren't available here.".to_owned())?;
+        let manager = self.hotkeys.as_ref().ok_or_else(|| tr!("System-wide keys aren't available here.").to_owned())?;
         let hotkey = combo.to_hotkey()?;
         if let Some((old, _)) = self.summon.take() {
             let _ = manager.unregister(old);
         }
         manager
             .register(hotkey)
-            .map_err(|e| format!("Couldn't claim {} ({e}). Another app may use it.", combo.label()))?;
+            .map_err(|e| tr!("Couldn't claim {} ({}). Another app may use it.", combo.label(), e))?;
         self.summon = Some((hotkey, combo.clone()));
         SUMMON_ID.store(hotkey.id(), Ordering::SeqCst);
         Ok(())
@@ -1059,7 +1064,7 @@ impl App {
     fn open_help(&mut self) {
         let ui = self.ui();
         ui.set_help(ModelRc::new(VecModel::from(self.help_rows())));
-        ui.set_back_label(if self.listing == View::Archive { "Done" } else { "Notes" }.into());
+        ui.set_back_label(if self.listing == View::Archive { tr!("Done") } else { tr!("Notes") }.into());
         ui.set_view(View::Help);
         ui.invoke_focus_help();
     }
@@ -1072,63 +1077,65 @@ impl App {
 
     fn help_rows(&self) -> Vec<HelpRow> {
         let l = |a| self.label(a);
+        let key = |k: &str| k.parse::<Combo>().map_or_else(|_| k.to_owned(), |c| c.label());
+        let mut dates = vec![
+            (tr!("date example" => "tomorrow 9am").to_owned(), tr!("Day and time")),
+            (tr!("date example" => "fri 17:00").to_owned(), tr!("This coming Friday")),
+            (tr!("date example" => "next mon").to_owned(), tr!("Monday next week")),
+            (tr!("date example" => "in 2 hours").to_owned(), tr!("From now (+30m, +2h and +1d work too)")),
+            (tr!("date example" => "10-20 14:00").to_owned(), tr!("Month and day")),
+            ("2026-12-24 18:00".to_owned(), tr!("Any date")),
+        ];
+        if i18n::current().code != "en" {
+            dates.push(("tomorrow 9am".to_owned(), tr!("English works too")));
+        }
         let groups: Vec<(&str, Vec<(String, &str)>)> = vec![
-            ("Anywhere", vec![(self.summon_label(), "Open or hide Wisp")]),
+            (tr!("Anywhere"), vec![(self.summon_label(), tr!("Open or hide Wisp"))]),
             (
-                "Writing",
+                tr!("Writing"),
                 vec![
-                    ("Enter".into(), "Save the note"),
-                    ("Shift+Enter".into(), "New line (lines after the first become its notes)"),
-                    (l(Action::Schedule), "Save, then add dates and reminders"),
-                    ("Esc".into(), "Hide Wisp (what you typed stays)"),
+                    (key("Enter"), tr!("Save the note")),
+                    (key("Shift+Enter"), tr!("New line (lines after the first become its notes)")),
+                    (l(Action::Schedule), tr!("Save, then add dates and reminders")),
+                    (key("Escape"), tr!("Hide Wisp (what you typed stays)")),
                 ],
             ),
             (
-                "Your notes",
+                tr!("Your notes"),
                 vec![
-                    ("↓ ↑".into(), "Move through notes"),
-                    ("Tab  Shift+Tab".into(), "Next or previous note, round and round"),
-                    ("Enter".into(), "Open the selected note"),
-                    (l(Action::ToggleDone), "Mark done (or bring back from Done)"),
-                    (l(Action::Delete), "Delete"),
-                    (l(Action::Undo), "Undo the last change"),
-                    (l(Action::Inbox), "Notes tab"),
-                    (l(Action::Archive), "Done tab"),
-                    ("Esc".into(), "Back to typing"),
+                    ("↓ ↑".into(), tr!("Move through notes")),
+                    (format!("{}  {}", key("Tab"), key("Shift+Tab")), tr!("Next or previous note, round and round")),
+                    (key("Enter"), tr!("Open the selected note")),
+                    (l(Action::ToggleDone), tr!("Mark done (or bring back from Done)")),
+                    (l(Action::Delete), tr!("Delete")),
+                    (l(Action::Undo), tr!("Undo the last change")),
+                    (l(Action::Inbox), tr!("Notes tab")),
+                    (l(Action::Archive), tr!("Done tab")),
+                    (key("Escape"), tr!("Back to typing")),
                 ],
             ),
             (
-                "Categories",
+                tr!("Categories"),
                 vec![
-                    ("#name".into(), "Typed in the box: shows only that category, and files the note there"),
-                    (l(Action::Category), "Next category for the selected note, or for what you're typing"),
-                    (self.shifted_label(Action::Category), "Previous category"),
+                    (tr!("#name").to_owned(), tr!("Typed in the box: shows only that category, and files the note there")),
+                    (l(Action::Category), tr!("Next category for the selected note, or for what you're typing")),
+                    (self.shifted_label(Action::Category), tr!("Previous category")),
                 ],
             ),
             (
-                "Editing a note",
+                tr!("Editing a note"),
                 vec![
-                    ("Enter".into(), "From the title, go to the notes"),
-                    ("Tab".into(), "Next field"),
-                    ("Esc".into(), "Save and close (twice: keep what's valid)"),
-                    (l(Action::AddReminder), "Add a reminder"),
-                    ("← →".into(), "Change the selected reminder"),
-                    ("Delete".into(), "Remove the selected reminder"),
-                    (l(Action::RemoveReminder), "Remove a reminder from anywhere"),
+                    (key("Enter"), tr!("From the title, go to the notes")),
+                    (key("Tab"), tr!("Next field")),
+                    (key("Escape"), tr!("Save and close (twice: keep what's valid)")),
+                    (l(Action::AddReminder), tr!("Add a reminder")),
+                    ("← →".into(), tr!("Change the selected reminder")),
+                    (key("Delete"), tr!("Remove the selected reminder")),
+                    (l(Action::RemoveReminder), tr!("Remove a reminder from anywhere")),
                 ],
             ),
-            (
-                "Dates you can type",
-                vec![
-                    ("tomorrow 9am".into(), "Day and time"),
-                    ("fri 17:00".into(), "This coming Friday"),
-                    ("+30m  in 2 hours".into(), "From now"),
-                    ("10-20 14:00".into(), "Month and day"),
-                    ("next mon".into(), "Monday next week"),
-                    ("明天下午3点".into(), "Chinese works too"),
-                ],
-            ),
-            ("Wisp", vec![(l(Action::Settings), "Settings"), (l(Action::Help), "This list"), (l(Action::Quit), "Quit")]),
+            (tr!("Dates you can type"), dates),
+            (tr!("Wisp"), vec![(l(Action::Settings), tr!("Settings")), (l(Action::Help), tr!("This list")), (l(Action::Quit), tr!("Quit"))]),
         ];
         let mut rows = Vec::new();
         for (section, entries) in groups {
@@ -1171,14 +1178,4 @@ fn place_and_focus(ui: &AppWindow) -> bool {
 /// Wayland sessions only deliver grabbed keys while an X11 window has focus.
 fn on_wayland() -> bool {
     cfg!(target_os = "linux") && std::env::var("XDG_SESSION_TYPE").is_ok_and(|t| t.eq_ignore_ascii_case("wayland"))
-}
-
-/// "Tomorrow 09:00" → "tomorrow 09:00", for use after a verb.
-fn mid_sentence(label: String) -> String {
-    for word in ["Today", "Tomorrow", "Yesterday"] {
-        if let Some(rest) = label.strip_prefix(word) {
-            return format!("{}{rest}", word.to_lowercase());
-        }
-    }
-    label
 }

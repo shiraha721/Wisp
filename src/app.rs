@@ -6,7 +6,7 @@
 mod editor;
 mod settings;
 
-use crate::config::{Action, Config, Theme};
+use crate::config::{self, Action, Config, Theme};
 use crate::dates;
 use crate::model::{self, Item, Store};
 use crate::platform;
@@ -89,8 +89,10 @@ pub struct App {
     reminders: Rc<VecModel<ReminderRow>>,
     settings: settings::SettingsState,
     hotkeys: Option<GlobalHotKeyManager>,
-    summon: Option<HotKey>,
-    summon_error: Option<String>,
+    /// The registered summon hotkey and the keys it stands for.
+    summon: Option<(HotKey, Combo)>,
+    /// Why the summon key isn't the one in the settings, or doesn't work at all.
+    summon_problem: Option<String>,
     toast_timer: slint::Timer,
     settings_toast_timer: slint::Timer,
     shown_at: Instant,
@@ -142,7 +144,7 @@ impl App {
             settings: settings::SettingsState::default(),
             hotkeys: None,
             summon: None,
-            summon_error: None,
+            summon_problem: None,
             toast_timer: slint::Timer::default(),
             settings_toast_timer: slint::Timer::default(),
             shown_at: Instant::now(),
@@ -154,20 +156,23 @@ impl App {
 
         match GlobalHotKeyManager::new() {
             Ok(manager) => app.hotkeys = Some(manager),
-            Err(err) => app.summon_error = Some(format!("System-wide keys aren't available here ({err}).")),
+            Err(err) => app.summon_problem = Some(format!("System-wide keys aren't available here ({err}).")),
         }
-        let summon = app.config.summon_combo();
-        if let Err(err) = app.register_summon(&summon) {
-            app.summon_error = Some(err);
-        }
+        app.claim_summon();
 
         app.apply_config_to_ui();
         app.refresh();
         if let Some(warning) = store_warning.or(config_warning) {
             app.toast(warning, true);
-        } else if let Some(err) = app.summon_error.clone() {
+        } else if let Some(problem) = app.summon_problem.clone() {
             let settings = app.label(Action::Settings);
-            app.toast_for(format!("{err} Pick another key in Settings ({settings})."), true, Duration::from_secs(20));
+            let working = app.summon.is_some();
+            let message = if working {
+                format!("{problem} Change it in Settings ({settings}).")
+            } else {
+                format!("{problem} Pick another key in Settings ({settings}).")
+            };
+            app.toast_for(message, !working, Duration::from_secs(20));
         }
         app
     }
@@ -180,7 +185,7 @@ impl App {
 
     pub fn set_tray(&mut self, tray: Option<crate::Tray>) {
         if let Some(t) = &tray {
-            t.set_summon_label(self.config.summon_combo().label().into());
+            t.set_summon_label(self.summon_label().into());
         }
         self.tray = tray;
     }
@@ -223,6 +228,15 @@ impl App {
 
     fn label(&self, action: Action) -> String {
         self.config.combo(action).label()
+    }
+
+    /// The keys that open Wisp right now: the registered ones, else the configured ones.
+    fn summon_keys(&self) -> Combo {
+        self.summon.as_ref().map_or_else(|| self.config.summon_combo(), |(_, combo)| combo.clone())
+    }
+
+    fn summon_label(&self) -> String {
+        self.summon_keys().label()
     }
 
     // -----------------------------------------------------------------------
@@ -390,7 +404,7 @@ impl App {
             }
             "Down" if bare && can_move => return self.move_selection(1),
             "Up" if bare && can_move => return self.move_selection(-1),
-            "Tab" if !combo.is_modified() => return self.move_selection(if combo.shift { -1 } else { 1 }),
+            "Tab" if !combo.is_modified() => return self.cycle_selection(if combo.shift { -1 } else { 1 }),
             "PageDown" if bare => return self.move_selection(6),
             "PageUp" if bare => return self.move_selection(-6),
             _ => {}
@@ -501,6 +515,21 @@ impl App {
         let current = self.ui().get_selected();
         let next = (current + delta).clamp(-1, self.rows.len() as i32 - 1);
         self.select((next >= 0).then_some(next as usize));
+        true
+    }
+
+    /// Tab and Shift+Tab step through the notes and wrap around at either end.
+    fn cycle_selection(&mut self, delta: i32) -> bool {
+        let count = self.rows.len() as i32;
+        if count > 0 {
+            let current = self.ui().get_selected();
+            let next = match current {
+                c if c >= 0 => (c + delta).rem_euclid(count),
+                _ if delta > 0 => 0,
+                _ => count - 1,
+            };
+            self.select(Some(next as usize));
+        }
         true
     }
 
@@ -753,7 +782,7 @@ impl App {
         let shown = self.rows.len();
         ui.set_status(if filtered && total > 0 { format!("{shown} of {total} match").into() } else { SharedString::new() });
 
-        let summon = self.config.summon_combo().label();
+        let summon = self.summon_label();
         let (title, body) = match (archive, filtered) {
             (false, false) if self.store.data.items.is_empty() => {
                 ("Nothing written yet".to_owned(), format!("Type above and press Enter. {summon} opens Wisp from any app."))
@@ -818,16 +847,40 @@ impl App {
     // -----------------------------------------------------------------------
     // Hotkey, theme, help
 
+    /// Registers the summon key from the settings. When that's the default and
+    /// another program holds it, the fallback stands in, so Wisp can always be opened.
+    fn claim_summon(&mut self) {
+        if self.hotkeys.is_none() {
+            return; // `summon_problem` already says why
+        }
+        let wanted = self.config.summon_combo();
+        self.summon_problem = match self.register_summon(&wanted) {
+            Ok(()) => None,
+            Err(err) if self.config.summon.is_empty() => {
+                let fallback: Combo = config::FALLBACK_SUMMON.parse().expect("the fallback summon key parses");
+                match self.register_summon(&fallback) {
+                    Ok(()) => Some(format!(
+                        "{} is taken by another program, so Wisp opens with {} for now.",
+                        wanted.label(),
+                        fallback.label()
+                    )),
+                    Err(_) => Some(err),
+                }
+            }
+            Err(err) => Some(err),
+        };
+    }
+
     fn register_summon(&mut self, combo: &Combo) -> Result<(), String> {
         let manager = self.hotkeys.as_ref().ok_or_else(|| "System-wide keys aren't available here.".to_owned())?;
         let hotkey = combo.to_hotkey()?;
-        if let Some(old) = self.summon.take() {
+        if let Some((old, _)) = self.summon.take() {
             let _ = manager.unregister(old);
         }
         manager
             .register(hotkey)
             .map_err(|e| format!("Couldn't claim {} ({e}). Another app may use it.", combo.label()))?;
-        self.summon = Some(hotkey);
+        self.summon = Some((hotkey, combo.clone()));
         SUMMON_ID.store(hotkey.id(), Ordering::SeqCst);
         Ok(())
     }
@@ -858,7 +911,7 @@ impl App {
         ui.global::<crate::Theme>().set_choice(choice);
         self.settings_ui.global::<crate::Theme>().set_choice(choice);
         if let Some(tray) = &self.tray {
-            tray.set_summon_label(self.config.summon_combo().label().into());
+            tray.set_summon_label(self.summon_label().into());
         }
         ui.set_help(ModelRc::new(VecModel::from(self.help_rows())));
     }
@@ -874,7 +927,7 @@ impl App {
     fn help_rows(&self) -> Vec<HelpRow> {
         let l = |a| self.label(a);
         let groups: Vec<(&str, Vec<(String, &str)>)> = vec![
-            ("Anywhere", vec![(self.config.summon_combo().label(), "Open or hide Wisp")]),
+            ("Anywhere", vec![(self.summon_label(), "Open or hide Wisp")]),
             (
                 "Writing",
                 vec![
@@ -888,6 +941,7 @@ impl App {
                 "Your notes",
                 vec![
                     ("↓ ↑".into(), "Move through notes"),
+                    ("Tab  Shift+Tab".into(), "Next or previous note, round and round"),
                     ("Enter".into(), "Open the selected note"),
                     (l(Action::ToggleDone), "Mark done (or bring back from Done)"),
                     (l(Action::Delete), "Delete"),

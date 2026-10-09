@@ -241,8 +241,8 @@ impl App {
                 self.config.open_on_reminder,
             ),
             Entry::Summon => {
-                let description = match &self.summon_error {
-                    Some(err) => err.clone(),
+                let description = match &self.summon_problem {
+                    Some(problem) => problem.clone(),
                     None if on_wayland() => "On Wayland, also bind “wisp --toggle” to a key in your system settings".into(),
                     None => "Works in every app. Press it again to hide Wisp.".into(),
                 };
@@ -251,7 +251,7 @@ impl App {
                     glyph: Glyph::Bolt,
                     title: "Open Wisp from anywhere".into(),
                     description: description.into(),
-                    keys: keys(self.config.summon_combo()),
+                    keys: keys(self.summon_keys()),
                     ..Default::default()
                 }
             }
@@ -459,8 +459,8 @@ impl App {
         match self.settings.entries.get(index).copied() {
             Some(Entry::Summon) => {
                 // Release the current key so pressing it again can be recorded.
-                if let (Some(manager), Some(hk)) = (&self.hotkeys, self.summon) {
-                    let _ = manager.unregister(hk);
+                if let (Some(manager), Some((hk, _))) = (&self.hotkeys, &self.summon) {
+                    let _ = manager.unregister(*hk);
                 }
                 self.settings.recording = true;
             }
@@ -477,14 +477,11 @@ impl App {
             Some(Entry::Theme) => self.cycle_theme(1),
             Some(Entry::ResetShortcuts) => {
                 self.config.shortcuts.clear();
-                let default: Combo = config::DEFAULT_SUMMON.parse().expect("default parses");
-                match self.register_summon(&default) {
-                    Ok(()) => {
-                        self.config.summon = default.to_string();
-                        self.summon_error = None;
-                        self.settings_toast("Every shortcut is back to its default.", false);
-                    }
-                    Err(err) => self.settings.error = Some((Entry::ResetShortcuts, err)),
+                self.config.summon.clear();
+                self.claim_summon();
+                match self.summon_problem.clone() {
+                    Some(problem) => self.settings.error = Some((Entry::ResetShortcuts, problem)),
+                    None => self.settings_toast("Every shortcut is back to its default.", false),
                 }
                 self.save_config();
                 self.apply_config_to_ui();
@@ -508,10 +505,7 @@ impl App {
                     self.settings_toast(format!("{} is back to {}.", info.label, combo.label()), false);
                 }
             }
-            Some(Entry::Summon) => {
-                let combo: Combo = config::DEFAULT_SUMMON.parse().expect("default parses");
-                self.apply_summon(combo);
-            }
+            Some(Entry::Summon) => self.apply_summon(config::default_summon()),
             _ => {}
         }
     }
@@ -522,8 +516,8 @@ impl App {
         }
         self.settings.recording = false;
         // Re-claim the summon key if recording had released it.
-        if let (Some(manager), Some(hk)) = (&self.hotkeys, self.summon) {
-            let _ = manager.register(hk);
+        if let (Some(manager), Some((hk, _))) = (&self.hotkeys, &self.summon) {
+            let _ = manager.register(*hk);
         }
         self.render_settings();
     }
@@ -565,20 +559,20 @@ impl App {
     }
 
     fn apply_summon(&mut self, combo: Combo) {
-        let previous = self.summon;
+        let previous = self.summon.clone();
         match self.register_summon(&combo) {
             Ok(()) => {
-                self.config.summon = combo.to_string();
-                self.summon_error = None;
+                self.config.set_summon(&combo);
+                self.summon_problem = None;
                 self.save_config();
                 self.apply_config_to_ui();
                 self.settings_toast(format!("{} now opens Wisp from anywhere.", combo.label()), false);
             }
             Err(err) => {
                 self.settings.error = Some((Entry::Summon, err));
-                if let (Some(manager), Some(hk)) = (&self.hotkeys, previous) {
+                if let (Some(manager), Some((hk, keys))) = (&self.hotkeys, previous) {
                     if manager.register(hk).is_ok() {
-                        self.summon = Some(hk);
+                        self.summon = Some((hk, keys));
                     }
                 }
             }

@@ -5,10 +5,19 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-/// The system-wide key that brings Wisp up. Ctrl+Alt+Shift is left alone by
-/// Windows, macOS (as ⌘⌥⇧), GNOME, KDE, browsers, office suites and IDEs, and it
-/// doesn't collide with input-method switching (Ctrl+Space, Ctrl+Shift, Win+Space).
-pub const DEFAULT_SUMMON: &str = "Ctrl+Alt+Shift+N";
+/// The system-wide key that brings Wisp up: two keys, N for note. Neither Windows
+/// nor the Linux desktops use Alt+N, launchers (Flow Launcher, PowerToys Run,
+/// uTools) sit on Alt+Space, input methods switch with Ctrl+Space, Ctrl+Shift or
+/// Win+Space, and AltGr+N (Ctrl+Alt, for ń and friends) is a different combination.
+/// On macOS ⌥N types a tilde, so it's ⌃⌥N there.
+pub const DEFAULT_SUMMON: &str = if cfg!(target_os = "macos") { "Alt+Super+N" } else { "Alt+N" };
+
+/// Used when another program already holds the default, so a fresh Wisp can always
+/// be summoned. Hardly anything claims all three modifiers.
+pub const FALLBACK_SUMMON: &str = "Ctrl+Alt+Shift+N";
+
+/// Bumped when stored settings need upgrading (see [`Config::upgrade`]).
+const CONFIG_VERSION: u32 = 1;
 
 /// Something a shortcut can do inside the window.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -136,6 +145,10 @@ pub const ACTIONS: &[ActionInfo] = &[
     },
 ];
 
+pub fn default_summon() -> Combo {
+    DEFAULT_SUMMON.parse().expect("the default summon key parses")
+}
+
 pub fn action_info(action: Action) -> &'static ActionInfo {
     ACTIONS.iter().find(|a| a.action == action).expect("every action is listed")
 }
@@ -152,6 +165,11 @@ pub enum Theme {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Config {
+    /// The format these settings were saved in; files from before versions existed read as 0.
+    #[serde(default)]
+    pub version: u32,
+    /// The summon key as the user set it, or empty for the default.
+    #[serde(skip_serializing_if = "String::is_empty")]
     pub summon: String,
     /// Action id → combo. Missing entries use the default.
     pub shortcuts: BTreeMap<String, String>,
@@ -167,7 +185,8 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Config {
-            summon: DEFAULT_SUMMON.into(),
+            version: CONFIG_VERSION,
+            summon: String::new(),
             shortcuts: BTreeMap::new(),
             launch_at_startup: true,
             hide_when_inactive: true,
@@ -181,12 +200,31 @@ impl Default for Config {
 impl Config {
     pub fn load(path: &Path) -> (Config, Option<String>) {
         match std::fs::read_to_string(path) {
-            Ok(text) => match serde_json::from_str(&text) {
-                Ok(cfg) => (cfg, None),
+            Ok(text) => match serde_json::from_str::<Config>(&text) {
+                Ok(mut cfg) => {
+                    if cfg.upgrade() {
+                        let _ = cfg.save(path);
+                    }
+                    (cfg, None)
+                }
                 Err(err) => (Config::default(), Some(format!("Settings file has an error ({err}); using defaults."))),
             },
             Err(_) => (Config::default(), None),
         }
+    }
+
+    /// Brings settings saved by an earlier Wisp up to date. Returns whether anything changed.
+    fn upgrade(&mut self) -> bool {
+        if self.version >= CONFIG_VERSION {
+            return false;
+        }
+        // Version 0 always wrote the summon key out, so its old default can't be told
+        // apart from a choice; treat it as "the default", which is now easier to press.
+        if self.version == 0 && self.summon == FALLBACK_SUMMON {
+            self.summon.clear();
+        }
+        self.version = CONFIG_VERSION;
+        true
     }
 
     pub fn save(&self, path: &Path) -> Result<(), String> {
@@ -199,8 +237,15 @@ impl Config {
         std::fs::rename(&tmp, path).map_err(|e| e.to_string())
     }
 
+    /// The summon key the user asked for (the default unless they changed it).
     pub fn summon_combo(&self) -> Combo {
-        self.summon.parse().unwrap_or_else(|_| DEFAULT_SUMMON.parse().expect("default parses"))
+        self.summon.parse().unwrap_or_else(|_| default_summon())
+    }
+
+    /// Stores `combo` as the summon key; the default is stored as "not set", so a
+    /// better default in a later version reaches everyone who never changed it.
+    pub fn set_summon(&mut self, combo: &Combo) {
+        self.summon = if *combo == default_summon() { String::new() } else { combo.to_string() };
     }
 
     /// The combo bound to `action` (falling back to the default if the stored one is unreadable).
@@ -249,6 +294,36 @@ mod tests {
             assert!(seen.insert(combo), "duplicate default for {}", a.id);
         }
         assert!(!seen.contains(&cfg.summon_combo()));
+        let fallback: Combo = FALLBACK_SUMMON.parse().unwrap();
+        assert!(fallback.validate_global().is_ok());
+        assert!(!seen.contains(&fallback));
+    }
+
+    #[test]
+    fn old_default_summon_key_is_upgraded() {
+        let dir = std::env::temp_dir().join(format!("wisp-config-{}", std::process::id()));
+        let path = dir.join("settings.json");
+        std::fs::create_dir_all(&dir).unwrap();
+
+        // Written by an earlier Wisp: the old default, and no version.
+        std::fs::write(&path, r#"{"summon": "Ctrl+Alt+Shift+N", "theme": "dark", "initialized": true}"#).unwrap();
+        let (cfg, warning) = Config::load(&path);
+        assert!(warning.is_none());
+        assert_eq!(cfg.summon_combo(), default_summon());
+        assert_eq!(cfg.theme, Theme::Dark);
+        let saved = std::fs::read_to_string(&path).unwrap();
+        assert!(!saved.contains("summon"), "the upgrade is saved: {saved}");
+
+        // Chosen on purpose, after the upgrade: kept.
+        let mut cfg = Config::default();
+        cfg.set_summon(&FALLBACK_SUMMON.parse().unwrap());
+        cfg.save(&path).unwrap();
+        assert_eq!(Config::load(&path).0.summon, FALLBACK_SUMMON);
+
+        // Someone else's choice from before the upgrade: kept.
+        std::fs::write(&path, r#"{"summon": "Ctrl+Shift+Space"}"#).unwrap();
+        assert_eq!(Config::load(&path).0.summon, "Ctrl+Shift+Space");
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]

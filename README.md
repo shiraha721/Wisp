@@ -9,9 +9,10 @@ about 25 MB of memory while it waits, and no GPU required.
 
 ## What it does
 
-- **One key from anywhere.** `Ctrl+Alt+Shift+N` (⌘⌥⇧N on macOS) opens Wisp with
-  the cursor already in the input, like Flow Launcher. Press it again, or `Esc`,
-  to hide it. The window also hides when you click elsewhere (you can turn that off).
+- **One key from anywhere.** `Alt+N` (⌃⌥N on macOS) opens Wisp with the cursor
+  already in the input, like Flow Launcher. Press it again, or `Esc`, to hide it.
+  The window also hides when you click elsewhere (you can turn that off). If
+  another program already holds `Alt+N`, Wisp says so and uses `Ctrl+Alt+Shift+N`.
 - **Type and go.** `Enter` saves the note. `Shift+Enter` adds a line: the first
   line becomes the title, the rest its notes. What you type also filters your
   notes, so related ones show up as you write.
@@ -50,11 +51,12 @@ Press `F1` in the app for the full list, which shows your own shortcuts.
 
 | Where | Key | Does |
 | --- | --- | --- |
-| Anywhere | `Ctrl+Alt+Shift+N` | Open or hide Wisp |
+| Anywhere | `Alt+N` | Open or hide Wisp |
 | Writing | `Enter` / `Shift+Enter` | Save the note / new line (later lines become notes) |
 | | `Ctrl+Enter` | Save, then add dates and reminders |
 | | `Esc` | Hide (the text you typed stays for next time) |
-| Your notes | `↓` `↑` `Tab` | Move through the list (`Esc` returns to typing) |
+| Your notes | `↓` `↑` | Move through the list (`Esc` returns to typing) |
+| | `Tab` / `Shift+Tab` | Next / previous note, wrapping around at the ends |
 | | `Enter` or `Ctrl+E` | Open the selected note |
 | | `Ctrl+D` | Mark done, or bring back from Done |
 | | `Ctrl+Delete` | Delete |

@@ -657,7 +657,6 @@ component HelpPane inherits FocusScope {
 
 export component AppWindow inherits Window {
     title: "Wisp";
-    icon: root.app-icon;
     no-frame: true;
     always-on-top: true;
     width: 680px;
@@ -665,7 +664,6 @@ export component AppWindow inherits Window {
     background: Theme.window;
     default-font-size: 14px;
 
-    in property <image> app-icon;
     in-out property <View> view: View.inbox;
 
     in-out property <string> query;

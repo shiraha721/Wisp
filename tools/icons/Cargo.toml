@@ -1,0 +1,13 @@
+[package]
+name = "wisp-icons"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Renders Wisp's icon sources into the PNG and ICO files the app embeds"
+
+[dependencies]
+resvg = "0.48"
+ico = "0.5"
+
+# Not part of the app's build.
+[workspace]

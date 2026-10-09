@@ -1,73 +1,67 @@
-//! The app icon, drawn in code so the binary needs no image files: a little index
-//! card (red top rule, blue lines, a highlighter stroke) on ballpoint blue.
+//! The app icon, from the PNGs in `assets/icons`. Those are rendered from
+//! `assets/icon.svg` and `assets/icon-small.svg` by `tools/icons`.
 
 use slint::{Image, Rgba8Pixel, SharedPixelBuffer};
 
-type Rgba = [f32; 4];
+const PNGS: [(u32, &[u8]); 9] = [
+    (16, include_bytes!("../assets/icons/wisp-16.png")),
+    (20, include_bytes!("../assets/icons/wisp-20.png")),
+    (24, include_bytes!("../assets/icons/wisp-24.png")),
+    (32, include_bytes!("../assets/icons/wisp-32.png")),
+    (40, include_bytes!("../assets/icons/wisp-40.png")),
+    (48, include_bytes!("../assets/icons/wisp-48.png")),
+    (64, include_bytes!("../assets/icons/wisp-64.png")),
+    (128, include_bytes!("../assets/icons/wisp-128.png")),
+    (256, include_bytes!("../assets/icons/wisp-256.png")),
+];
 
-const BALLPOINT: Rgba = [0.165, 0.310, 0.800, 1.0];
-const CARD: Rgba = [0.988, 0.992, 1.0, 1.0];
-const RED: Rgba = [0.875, 0.310, 0.353, 1.0];
-const LINE: Rgba = [0.76, 0.81, 0.93, 1.0];
-const HIGHLIGHT: Rgba = [1.0, 0.89, 0.36, 0.9];
+/// The icon as a PNG file, for places that need one on disk (Windows notifications).
+#[cfg_attr(not(windows), allow(dead_code))]
+pub const PNG_256: &[u8] = include_bytes!("../assets/icons/wisp-256.png");
 
-/// Signed distance from (px, py) to a rounded rectangle; negative inside.
-fn rounded_rect(px: f32, py: f32, x0: f32, y0: f32, x1: f32, y1: f32, r: f32) -> f32 {
-    let (cx, cy) = ((x0 + x1) / 2.0, (y0 + y1) / 2.0);
-    let (hx, hy) = ((x1 - x0) / 2.0 - r, (y1 - y0) / 2.0 - r);
-    let (dx, dy) = ((px - cx).abs() - hx, (py - cy).abs() - hy);
-    let outside = (dx.max(0.0).powi(2) + dy.max(0.0).powi(2)).sqrt();
-    outside + dx.max(dy).min(0.0) - r
+/// The icon drawn for `size` pixels: the exact size if there is one, otherwise
+/// the next larger (which the caller's platform scales down).
+pub fn image(size: u32) -> Image {
+    rgba(size)
+        .map(|(data, width, height)| {
+            let mut pixels = SharedPixelBuffer::<Rgba8Pixel>::new(width, height);
+            pixels.make_mut_bytes().copy_from_slice(&data);
+            Image::from_rgba8(pixels)
+        })
+        .unwrap_or_default()
 }
 
-fn over(dst: Rgba, src: Rgba, coverage: f32) -> Rgba {
-    let a = src[3] * coverage;
-    let out_a = a + dst[3] * (1.0 - a);
-    if out_a <= 0.0 {
-        return [0.0; 4];
+/// Like [`image`], as straight RGBA bytes with their width and height.
+pub fn rgba(size: u32) -> Option<(Vec<u8>, u32, u32)> {
+    let (_, png) = PNGS.iter().find(|(s, _)| *s >= size).unwrap_or(&PNGS[PNGS.len() - 1]);
+    decode(png)
+}
+
+fn decode(png: &[u8]) -> Option<(Vec<u8>, u32, u32)> {
+    let mut decoder = png::Decoder::new(std::io::Cursor::new(png));
+    decoder.set_transformations(png::Transformations::EXPAND | png::Transformations::ALPHA | png::Transformations::STRIP_16);
+    let mut reader = decoder.read_info().ok()?;
+    let mut data = vec![0; reader.output_buffer_size()?];
+    let frame = reader.next_frame(&mut data).ok()?;
+    if frame.color_type != png::ColorType::Rgba || frame.bit_depth != png::BitDepth::Eight {
+        return None;
     }
-    let mix = |i: usize| (src[i] * a + dst[i] * dst[3] * (1.0 - a)) / out_a;
-    [mix(0), mix(1), mix(2), out_a]
+    data.truncate(frame.buffer_size());
+    Some((data, frame.width, frame.height))
 }
 
-/// Colour of the icon at a point in unit coordinates (0..1).
-fn sample(u: f32, v: f32) -> Rgba {
-    let inside = |d: f32| if d <= 0.0 { 1.0 } else { 0.0 };
-    let mut c = [0.0; 4];
-    c = over(c, BALLPOINT, inside(rounded_rect(u, v, 0.02, 0.02, 0.98, 0.98, 0.22)));
-    let card = inside(rounded_rect(u, v, 0.17, 0.22, 0.83, 0.80, 0.06));
-    c = over(c, CARD, card);
-    c = over(c, HIGHLIGHT, card * inside(rounded_rect(u, v, 0.24, 0.47, 0.64, 0.585, 0.03)));
-    c = over(c, RED, card * inside(rounded_rect(u, v, 0.17, 0.335, 0.83, 0.375, 0.0)));
-    for y in [0.53, 0.67] {
-        c = over(c, LINE, card * inside(rounded_rect(u, v, 0.24, y - 0.014, 0.76, y + 0.014, 0.01)));
-    }
-    c
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-pub fn app_icon(size: u32) -> Image {
-    const SS: u32 = 4; // supersampling per axis
-    let mut buffer = SharedPixelBuffer::<Rgba8Pixel>::new(size, size);
-    let pixels = buffer.make_mut_slice();
-    for y in 0..size {
-        for x in 0..size {
-            let mut acc = [0.0f32; 4];
-            for sy in 0..SS {
-                for sx in 0..SS {
-                    let u = (x as f32 + (sx as f32 + 0.5) / SS as f32) / size as f32;
-                    let v = (y as f32 + (sy as f32 + 0.5) / SS as f32) / size as f32;
-                    let s = sample(u, v);
-                    for i in 0..3 {
-                        acc[i] += s[i] * s[3];
-                    }
-                    acc[3] += s[3];
-                }
-            }
-            let n = (SS * SS) as f32;
-            let alpha = acc[3] / n;
-            let channel = |i: usize| if acc[3] > 0.0 { (acc[i] / acc[3] * 255.0).round() as u8 } else { 0 };
-            pixels[(y * size + x) as usize] = Rgba8Pixel { r: channel(0), g: channel(1), b: channel(2), a: (alpha * 255.0).round() as u8 };
+    #[test]
+    fn every_size_decodes() {
+        for (size, png) in PNGS {
+            let (data, width, height) = decode(png).unwrap_or_else(|| panic!("{size} px icon doesn't decode"));
+            assert_eq!((width, height), (size, size));
+            assert_eq!(data.len() as u32, size * size * 4);
         }
+        assert_eq!(image(18).size().width, 20, "picks the next larger size");
+        assert_eq!(image(1000).size().width, 256);
     }
-    Image::from_rgba8(buffer)
 }

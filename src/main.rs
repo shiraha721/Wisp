@@ -49,8 +49,8 @@ fn main() {
         "show"
     };
 
-    let (data_dir, portable) = platform::data_dir();
-    let instance = platform::claim_instance(&data_dir, command);
+    let data = platform::data_dir();
+    let instance = platform::claim_instance(&data.path, command);
     if matches!(instance, platform::Instance::Forwarded) || command == "quit" {
         return; // the running Wisp took the command (or there's nothing to quit)
     }
@@ -74,17 +74,22 @@ fn main() {
             std::process::exit(1);
         }
     };
-    let icon = icon::app_icon(64);
-    ui.set_app_icon(icon.clone());
-    settings.set_app_icon(icon.clone());
+    settings.set_logo(icon::image(128));
+    if let Err(err) = platform::register_app_identity(&data.path) {
+        eprintln!("wisp: couldn't register for notifications: {err}");
+    }
 
-    app::install(app::App::new(&ui, settings.clone_strong(), data_dir, portable));
+    app::install(app::App::new(&ui, settings.clone_strong(), data.path.clone(), data.portable));
+    if let Some(from) = &data.copied_from {
+        let (from, to) = (from.display().to_string(), data.path.display().to_string());
+        with_app(|app| app.announce_move(&from, &to));
+    }
     wire_launcher(&ui);
     wire_settings(&settings);
 
     let tray = Tray::new().ok();
     if let Some(tray) = &tray {
-        tray.set_app_icon(icon);
+        tray.set_app_icon(icon::image(platform::tray_icon_size()));
         tray.on_open_app(|| {
             with_app(|app| app.summon());
         });
@@ -209,21 +214,15 @@ fn wire_settings(settings: &SettingsWindow) {
     });
 }
 
-/// Launcher-style tweaks for the first window (the launcher): on Windows no
-/// taskbar button, a drop shadow and rounded corners; on macOS no Dock icon.
+/// Sets up the windowing backend. Every window gets Wisp's icon as it's created
+/// (see [`style_window`]); on macOS Wisp also stays out of the Dock.
 fn select_backend() -> Result<(), slint::PlatformError> {
-    let selector = slint::BackendSelector::new();
-    #[cfg(windows)]
-    let selector = {
-        let launcher_done = std::cell::Cell::new(false);
-        selector.with_winit_window_attributes_hook(move |attributes| {
-            use winit::platform::windows::{CornerPreference, WindowAttributesExtWindows};
-            if launcher_done.replace(true) {
-                return attributes; // the settings window keeps the standard frame
-            }
-            attributes.with_skip_taskbar(true).with_undecorated_shadow(true).with_corner_preference(CornerPreference::Round)
-        })
-    };
+    let launcher_done = std::cell::Cell::new(false);
+    let selector = slint::BackendSelector::new().with_winit_window_attributes_hook(move |attributes| {
+        // The launcher is created first.
+        let launcher = !launcher_done.replace(true);
+        style_window(attributes, launcher)
+    });
     #[cfg(target_os = "macos")]
     let selector = {
         use winit::platform::macos::{ActivationPolicy, EventLoopBuilderExtMacOS};
@@ -232,4 +231,35 @@ fn select_backend() -> Result<(), slint::PlatformError> {
         selector.with_winit_event_loop_builder(builder)
     };
     selector.select()
+}
+
+/// Gives a window Wisp's icon. On Windows the icon comes from wisp.exe's own
+/// resources (see build.rs) at exactly the sizes Windows draws, and the launcher
+/// also loses its taskbar button and gains a drop shadow and rounded corners.
+fn style_window(attributes: winit::window::WindowAttributes, launcher: bool) -> winit::window::WindowAttributes {
+    #[cfg(windows)]
+    {
+        use winit::platform::windows::{CornerPreference, IconExtWindows, WindowAttributesExtWindows};
+        let (small, big) = platform::window_icon_sizes();
+        let icon = |size: u32| {
+            winit::window::Icon::from_resource(1, Some(winit::dpi::PhysicalSize::new(size, size)))
+                .ok()
+                .or_else(|| png_icon(size))
+        };
+        let attributes = attributes.with_window_icon(icon(small)).with_taskbar_icon(icon(big));
+        if !launcher {
+            return attributes; // the settings window keeps the standard frame
+        }
+        attributes.with_skip_taskbar(true).with_undecorated_shadow(true).with_corner_preference(CornerPreference::Round)
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = launcher;
+        attributes.with_window_icon(png_icon(128))
+    }
+}
+
+fn png_icon(size: u32) -> Option<winit::window::Icon> {
+    let (rgba, width, height) = icon::rgba(size)?;
+    winit::window::Icon::from_rgba(rgba, width, height).ok()
 }

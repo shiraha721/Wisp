@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Wisp icon for 16-32 px (tray, title bars, small Explorer views).
+       Shapes sit on the 16 px grid: even coordinates are pixel edges at 16 px. -->
+  <defs>
+    <linearGradient id="plate" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5B8CFF"/>
+      <stop offset="1" stop-color="#5A3FE0"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="32" height="32" rx="8" fill="url(#plate)"/>
+  <path fill="#FFFFFF" d="M10 6 H19 L24 11 V24 Q24 26 22 26 H10 Q8 26 8 24 V8 Q8 6 10 6 Z"/>
+  <path fill="#C9D1FF" d="M19 6 V9.5 Q19 11 20.5 11 H24 Z"/>
+  <path fill="none" stroke="#8FA0E6" stroke-width="2" stroke-linecap="square" d="M12 15 H17 M12 19 H20"/>
+  <path fill="none" stroke="#FFA81F" stroke-width="2.2" stroke-linecap="square" d="M12 23 H19"/>
+</svg>

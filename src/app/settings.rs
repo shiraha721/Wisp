@@ -296,7 +296,7 @@ impl App {
             Entry::Folder => SettingCard {
                 kind: 3,
                 glyph: Glyph::Folder,
-                title: "Notes folder".into(),
+                title: if self.portable { "Notes folder (next to Wisp)" } else { "Notes folder" }.into(),
                 description: self.data_dir.display().to_string().into(),
                 value: "Open folder".into(),
                 ..Default::default()

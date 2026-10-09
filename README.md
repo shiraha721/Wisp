@@ -113,28 +113,42 @@ Only one Wisp runs per data folder; later launches pass their command to it.
 
 ## Where things are kept
 
-Two JSON files, written atomically on every change:
+Wisp is portable: give it a folder of its own and it keeps everything in a
+`data` folder beside the program.
 
-| | |
-| --- | --- |
-| Windows | `%APPDATA%\Wisp\` |
-| macOS | `~/Library/Application Support/Wisp/` |
-| Linux | `~/.local/share/Wisp/` |
+```
+Wisp\
+├── Wisp.exe
+└── data\
+    ├── notes.json      your notes
+    ├── settings.json   your settings
+    └── wisp.png        the icon Windows shows on reminders
+```
 
-`notes.json` holds the notes and `settings.json` the settings. If `notes.json`
-can't be read, it's moved aside (never overwritten) and Wisp says so. Files from
-before notes had their own field are converted when loaded: everything after
-a note's first line becomes its notes.
+- On Windows the `data` folder is created on first start. Notes from an earlier
+  Wisp (in `%APPDATA%\Wisp`) are copied over; the originals are left as they were.
+- If the program's folder can't be written to (under Program Files, say), and on
+  macOS and Linux unless you create `data` yourself, Wisp uses the per-user folder:
+  `%APPDATA%\Wisp`, `~/Library/Application Support/Wisp` or `~/.local/share/Wisp`.
+- `WISP_HOME` overrides all of this. Settings → About shows the folder in use.
 
-**Portable mode:** create a folder named `wisp-data` next to the executable and
-everything is stored there instead (start-with-computer stays off). The
-`WISP_HOME` environment variable also overrides the location.
+Both files are written atomically on every change. If `notes.json` can't be read,
+it's moved aside (never overwritten) and Wisp says so. Files from before notes had
+their own field are converted when loaded: everything after a note's first line
+becomes its notes.
+
+Outside its folder, Wisp writes only to the registry on Windows: the
+start-with-Windows entry (if switched on) and the name and icon Windows shows
+on its notifications (`HKCU\Software\Classes\AppUserModelId\Wisp.Notes`).
 
 ## Platform notes
 
-- **Windows**: the launcher has no taskbar button; on Windows 11 it gets rounded
-  corners and a shadow. Shortcuts also work while a Chinese or Japanese input
-  method is active (full-width punctuation such as `，` counts as `,`).
+- **Windows**: `wisp.exe` carries its icon, version details and a manifest, so
+  Explorer, Task Manager, Alt+Tab and the startup-apps list show "Wisp" with its
+  icon. The launcher has no taskbar button; on Windows 11 it gets rounded corners
+  and a shadow. Reminders arrive as Windows notifications from "Wisp". Shortcuts
+  also work while a Chinese or Japanese input method is active (full-width
+  punctuation such as `，` counts as `,`).
 - **Linux, X11**: everything works as described.
 - **Linux, Wayland**: Wisp runs through XWayland. Wayland doesn't let apps grab
   keys system-wide, so the summon key only works while an X11 window has focus.
@@ -151,19 +165,28 @@ everything is stored there instead (start-with-computer stays off). The
 ## Project layout
 
 ```
-ui/app.slint          what Rust sees, and the tray menu
-ui/launcher.slint     the launcher: notes list, editor, shortcut list
-ui/settings.slint     the settings window
-ui/theme.slint        colours, sizes and the icon set
-ui/widgets.slint      shared pieces: keycaps, tiles, cards, inputs, switches
-src/main.rs           start-up: single instance, hotkey, tray, timers
-src/app.rs            the controller: windows, keys, list, undo, reminders
-src/app/editor.rs     the note editor
-src/app/settings.rs   the settings window's pages and keys
-src/model.rs          notes, reminder rules and the JSON store
-src/dates.rs      date/time parsing and labels
-src/shortcuts.rs  key combinations ↔ text ↔ system hotkeys
-src/config.rs     settings and default shortcuts
-src/platform.rs   data folder, autostart, notifications, single instance
-src/icon.rs       the app icon, drawn in code
+ui/app.slint           what Rust sees, and the tray menu
+ui/launcher.slint      the launcher: notes list, editor, shortcut list
+ui/settings.slint      the settings window
+ui/theme.slint         colours, sizes and the icon set
+ui/widgets.slint       shared pieces: keycaps, tiles, cards, inputs, switches
+src/main.rs            start-up: single instance, hotkey, tray, timers
+src/app.rs             the controller: windows, keys, list, undo, reminders
+src/app/editor.rs      the note editor
+src/app/settings.rs    the settings window's pages and keys
+src/model.rs           notes, reminder rules and the JSON store
+src/dates.rs           date/time parsing and labels
+src/shortcuts.rs       key combinations ↔ text ↔ system hotkeys
+src/config.rs          settings and default shortcuts
+src/platform.rs        data folder, autostart, notifications, single instance
+src/icon.rs            loads the icon PNGs
+assets/icon.svg        the app icon (40 px and up)
+assets/icon-small.svg  the icon for 16–32 px: tray, title bars
+assets/icons/*.png     rendered sizes, embedded in the program
+assets/wisp.ico        the Windows icon (16–256 px), embedded by build.rs
+assets/windows/        the Windows manifest
+tools/icons/           renders the SVGs into the PNGs and the .ico
 ```
+
+After editing an icon SVG, regenerate the files with
+`cargo run --release --manifest-path tools/icons/Cargo.toml`.

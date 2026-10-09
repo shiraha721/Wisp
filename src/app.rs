@@ -77,6 +77,8 @@ pub struct App {
     config: Config,
     config_path: PathBuf,
     data_dir: PathBuf,
+    /// The data folder sits next to the program.
+    portable: bool,
     rows: Vec<u64>,
     selected_id: Option<u64>,
     listing: View,
@@ -107,8 +109,8 @@ impl App {
         let (mut config, config_warning) = Config::load(&config_path);
 
         if !config.initialized {
-            // Turn on "start with the computer" once, for installed release builds.
-            config.launch_at_startup = !portable && !cfg!(debug_assertions);
+            // Turn on "start with the computer" once, for release builds.
+            config.launch_at_startup = !cfg!(debug_assertions);
             config.initialized = true;
             let _ = config.save(&config_path);
         }
@@ -128,6 +130,7 @@ impl App {
             config,
             config_path,
             data_dir,
+            portable,
             rows: Vec::new(),
             selected_id: None,
             listing: View::Inbox,
@@ -167,6 +170,12 @@ impl App {
             app.toast_for(format!("{err} Pick another key in Settings ({settings})."), true, Duration::from_secs(20));
         }
         app
+    }
+
+    /// Tells the user where their notes went when they were copied to the portable folder.
+    pub fn announce_move(&mut self, from: &str, to: &str) {
+        debug_log!("copied notes from {from} to {to}");
+        self.toast_for(format!("Your notes now live next to Wisp, in {to}"), false, Duration::from_secs(12));
     }
 
     pub fn set_tray(&mut self, tray: Option<crate::Tray>) {

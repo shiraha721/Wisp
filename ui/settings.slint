@@ -281,7 +281,6 @@ component SettingCardView inherits Rectangle {
 
 export component SettingsWindow inherits Window {
     title: "Wisp Settings";
-    icon: root.app-icon;
     preferred-width: 880px;
     preferred-height: 620px;
     min-width: 760px;
@@ -289,7 +288,7 @@ export component SettingsWindow inherits Window {
     background: Theme.window;
     default-font-size: 14px;
 
-    in property <image> app-icon;
+    in property <image> logo;
     in property <[NavItem]> pages;
     in property <int> page;
     in property <bool> nav-active;
@@ -370,9 +369,9 @@ export component SettingsWindow inherits Window {
                         padding-bottom: 18px;
                         spacing: 12px;
                         Image {
-                            source: root.app-icon;
-                            width: 34px;
-                            height: 34px;
+                            source: root.logo;
+                            width: 36px;
+                            height: 36px;
                         }
                         VerticalLayout {
                             alignment: center;

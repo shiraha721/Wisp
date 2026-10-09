@@ -166,6 +166,71 @@ impl Reminder {
     }
 }
 
+/// A group of notes the user names, like Daily, Work or School.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Category {
+    pub id: u64,
+    pub name: String,
+    /// One of the UI's category colours (`0..CATEGORY_COLORS`).
+    #[serde(default)]
+    pub color: u8,
+}
+
+/// How many colours the UI has for categories (see `Theme.tag` in ui/theme.slint).
+pub const CATEGORY_COLORS: u8 = 8;
+
+impl Category {
+    /// The word that names this category in typed text: "#work", "#side-project".
+    pub fn token(&self) -> String {
+        let words: Vec<&str> = self.name.split_whitespace().collect();
+        format!("#{}", words.join("-").to_lowercase())
+    }
+}
+
+/// A category name compared loosely: ignoring case, spaces, '-' and '_'.
+fn loose(name: &str) -> String {
+    name.chars().filter(|c| !c.is_whitespace() && *c != '-' && *c != '_').flat_map(char::to_lowercase).collect()
+}
+
+/// The category a `#word` names: the one whose name matches it exactly (loosely, see
+/// [`loose`]), or else the first one it's the beginning of, so "#wo" finds Work.
+pub fn find_category<'a>(categories: &'a [Category], word: &str) -> Option<&'a Category> {
+    let word = loose(word.trim_end_matches(|c: char| c.is_ascii_punctuation() || "，。；：！？".contains(c)));
+    if word.is_empty() {
+        return None;
+    }
+    categories
+        .iter()
+        .find(|c| loose(&c.name) == word)
+        .or_else(|| categories.iter().find(|c| loose(&c.name).starts_with(&word)))
+}
+
+/// Takes the `#category` words out of typed text. Returns the category named last
+/// and the text without those words. Other `#words` (like "issue #42") stay.
+pub fn take_category(categories: &[Category], text: &str) -> (Option<u64>, String) {
+    let mut found = None;
+    let lines: Vec<String> = text
+        .split('\n')
+        .map(|line| {
+            let mut kept = Vec::new();
+            for word in line.split(' ') {
+                let tag = word.strip_prefix('#').or_else(|| word.strip_prefix('＃'));
+                match tag.and_then(|t| find_category(categories, t)) {
+                    Some(c) => found = Some(c.id),
+                    None => kept.push(word),
+                }
+            }
+            // Removing a word mid-line leaves two spaces; keep the line's own indentation.
+            let joined = kept.join(" ");
+            let body = joined.trim_start();
+            let indent = &joined[..joined.len() - body.len()];
+            let words: Vec<&str> = body.split(' ').filter(|w| !w.is_empty()).collect();
+            format!("{indent}{}", words.join(" "))
+        })
+        .collect();
+    (found, lines.join("\n"))
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Item {
     pub id: u64,
@@ -187,6 +252,9 @@ pub struct Item {
     /// Set when the item is marked done; done items live in the archive.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub done_at: Option<i64>,
+    /// The id of the note's category, if it has one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub category: Option<u64>,
     /// A reminder went off and the user hasn't looked at the item since.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub ringing: bool,
@@ -297,10 +365,14 @@ where
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Data {
+    /// The next id for a note or a category (they share one sequence, so an id is never reused).
     #[serde(default)]
     pub next_id: u64,
     #[serde(default)]
     pub items: Vec<Item>,
+    /// `None` in files from before categories, which get a few to start with.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub categories: Option<Vec<Category>>,
 }
 
 pub struct Store {
@@ -336,7 +408,13 @@ impl Store {
                 (item.text, item.notes) = split_title(&item.text);
             }
         }
-        let max_id = store.data.items.iter().map(|i| i.id).max().unwrap_or(0);
+        let categories: Vec<u64> = store.categories().iter().map(|c| c.id).collect();
+        for item in &mut store.data.items {
+            if item.category.is_some_and(|id| !categories.contains(&id)) {
+                item.category = None;
+            }
+        }
+        let max_id = store.data.items.iter().map(|i| i.id).chain(categories).max().unwrap_or(0);
         store.data.next_id = store.data.next_id.max(max_id + 1);
         (store, warning)
     }
@@ -352,9 +430,14 @@ impl Store {
         std::fs::rename(&tmp, &self.path).map_err(|e| format!("{}: {e}", self.path.display()))
     }
 
-    pub fn add(&mut self, text: &str, notes: &str, now: i64) -> u64 {
+    fn fresh_id(&mut self) -> u64 {
         let id = self.data.next_id.max(1);
         self.data.next_id = id + 1;
+        id
+    }
+
+    pub fn add(&mut self, text: &str, notes: &str, now: i64) -> u64 {
+        let id = self.fresh_id();
         self.data.items.push(Item {
             id,
             text: text.to_owned(),
@@ -365,6 +448,7 @@ impl Store {
             due: None,
             reminders: Vec::new(),
             done_at: None,
+            category: None,
             ringing: false,
         });
         id
@@ -393,6 +477,104 @@ impl Store {
         if let Some(slot) = self.get_mut(item.id) {
             *slot = item;
         }
+    }
+
+    // -----------------------------------------------------------------------
+    // Categories
+
+    pub fn categories(&self) -> &[Category] {
+        self.data.categories.as_deref().unwrap_or(&[])
+    }
+
+    pub fn category(&self, id: u64) -> Option<&Category> {
+        self.categories().iter().find(|c| c.id == id)
+    }
+
+    /// Adds the first categories, once per notes file. Returns whether it did.
+    pub fn seed_categories(&mut self, names: &[&str]) -> bool {
+        if self.data.categories.is_some() {
+            return false;
+        }
+        self.data.categories = Some(Vec::new());
+        for name in names {
+            let _ = self.add_category(name);
+        }
+        true
+    }
+
+    /// Adds a category with the next unused colour.
+    pub fn add_category(&mut self, name: &str) -> Result<u64, String> {
+        let name = self.check_name(name, None)?;
+        let used: Vec<u8> = self.categories().iter().map(|c| c.color).collect();
+        let color = (0..CATEGORY_COLORS).find(|c| !used.contains(c)).unwrap_or(used.len() as u8 % CATEGORY_COLORS);
+        let id = self.fresh_id();
+        self.data.categories.get_or_insert_with(Vec::new).push(Category { id, name, color });
+        Ok(id)
+    }
+
+    pub fn rename_category(&mut self, id: u64, name: &str) -> Result<(), String> {
+        let name = self.check_name(name, Some(id))?;
+        if let Some(c) = self.category_mut(id) {
+            c.name = name;
+        }
+        Ok(())
+    }
+
+    pub fn recolor_category(&mut self, id: u64, delta: i32) {
+        if let Some(c) = self.category_mut(id) {
+            c.color = (i32::from(c.color) + delta).rem_euclid(i32::from(CATEGORY_COLORS)) as u8;
+        }
+    }
+
+    /// Moves a category up (`delta` < 0) or down the list. Returns whether it moved.
+    pub fn move_category(&mut self, id: u64, delta: i32) -> bool {
+        let list = self.data.categories.get_or_insert_with(Vec::new);
+        let Some(from) = list.iter().position(|c| c.id == id) else { return false };
+        let to = from as i32 + delta;
+        if to < 0 || to >= list.len() as i32 {
+            return false;
+        }
+        let category = list.remove(from);
+        list.insert(to as usize, category);
+        true
+    }
+
+    /// Removes a category. Its notes stay, without one.
+    pub fn remove_category(&mut self, id: u64) {
+        if let Some(list) = self.data.categories.as_mut() {
+            list.retain(|c| c.id != id);
+        }
+        for item in &mut self.data.items {
+            if item.category == Some(id) {
+                item.category = None;
+            }
+        }
+    }
+
+    /// (open, done) notes in a category.
+    pub fn category_counts(&self, id: u64) -> (usize, usize) {
+        let notes = self.data.items.iter().filter(|i| i.category == Some(id));
+        notes.fold((0, 0), |(open, done), i| if i.is_done() { (open, done + 1) } else { (open + 1, done) })
+    }
+
+    fn category_mut(&mut self, id: u64) -> Option<&mut Category> {
+        self.data.categories.as_mut()?.iter_mut().find(|c| c.id == id)
+    }
+
+    /// A trimmed, usable name that no other category has (loosely, see [`loose`]).
+    fn check_name(&self, name: &str, except: Option<u64>) -> Result<String, String> {
+        let name = name.split_whitespace().collect::<Vec<_>>().join(" ");
+        let name = name.trim_start_matches(['#', '＃']).trim().to_owned();
+        if loose(&name).is_empty() {
+            return Err("Give it a name.".into());
+        }
+        if name.chars().count() > 40 {
+            return Err("That's a long name. Keep it under 40 characters.".into());
+        }
+        if let Some(other) = self.categories().iter().find(|c| Some(c.id) != except && loose(&c.name) == loose(&name)) {
+            return Err(format!("There's already a category called “{}”.", other.name));
+        }
+        Ok(name)
     }
 }
 
@@ -434,6 +616,7 @@ mod tests {
             due,
             reminders: rules.iter().copied().map(Reminder::new).collect(),
             done_at: None,
+            category: None,
             ringing: false,
         }
     }
@@ -522,6 +705,43 @@ mod tests {
     }
 
     #[test]
+    fn categories_are_named_with_hash_words() {
+        let mut store = Store { path: PathBuf::new(), data: Data::default() };
+        assert!(store.seed_categories(&["Daily", "Work", "School"]));
+        assert!(!store.seed_categories(&["Again"]), "only once per file");
+        let ids: Vec<u64> = store.categories().iter().map(|c| c.id).collect();
+        let (daily, work) = (ids[0], ids[1]);
+        let side = store.add_category("  side   project ").unwrap();
+        assert_eq!(store.category(side).unwrap().name, "side project");
+        assert_eq!(store.category(side).unwrap().token(), "#side-project");
+        let colors: Vec<u8> = store.categories().iter().map(|c| c.color).collect();
+        assert_eq!(colors, [0, 1, 2, 3], "each new category gets an unused colour");
+
+        let cats = store.categories();
+        assert_eq!(take_category(cats, "Buy milk #daily"), (Some(daily), "Buy milk".into()));
+        assert_eq!(take_category(cats, "#WORK fix the build\n  details #wo"), (Some(work), "fix the build\n  details".into()));
+        assert_eq!(take_category(cats, "Fix issue #42 today"), (None, "Fix issue #42 today".into()), "not a category");
+        assert_eq!(take_category(cats, "plan ＃side-project, then rest"), (Some(side), "plan then rest".into()));
+        assert_eq!(take_category(cats, "#sideproject").0, Some(side));
+        assert_eq!(find_category(cats, "s").map(|c| c.id), Some(ids[2]), "the first one it begins wins");
+
+        assert!(store.add_category("work").is_err(), "names are unique, ignoring case");
+        assert!(store.add_category(" # ").is_err());
+        assert!(store.rename_category(work, "Work").is_ok(), "renaming to itself is fine");
+        assert!(store.rename_category(work, "Daily").is_err());
+
+        let note = store.add("Report", "", 1);
+        store.get_mut(note).unwrap().category = Some(work);
+        assert_eq!(store.category_counts(work), (1, 0));
+        assert!(store.move_category(work, -1));
+        assert_eq!(store.categories()[0].id, work);
+        assert!(!store.move_category(work, -1), "already first");
+        store.remove_category(work);
+        assert!(store.category(work).is_none());
+        assert_eq!(store.get(note).unwrap().category, None, "its notes stay, without a category");
+    }
+
+    #[test]
     fn store_round_trip_and_recovery() {
         let dir = std::env::temp_dir().join(format!("wisp-test-{}", std::process::id()));
         let path = dir.join("data.json");
@@ -539,6 +759,13 @@ mod tests {
         std::fs::write(&path, r#"{"items":[{"id":7,"text":"Plan trip\nbook train","created":1}]}"#).unwrap();
         let (old, _) = Store::load(&path);
         assert_eq!((old.data.items[0].text.as_str(), old.data.items[0].notes.as_str()), ("Plan trip", "book train"));
+
+        // Notes pointing at a category that no longer exists lose it.
+        std::fs::write(&path, r#"{"items":[{"id":7,"text":"x","created":1,"category":3}],"categories":[{"id":2,"name":"Work"}]}"#).unwrap();
+        let (old, _) = Store::load(&path);
+        assert_eq!(old.data.items[0].category, None);
+        assert_eq!(old.categories()[0].name, "Work");
+        assert!(old.data.next_id > 7);
 
         std::fs::write(&path, "{ not json").unwrap();
         let (fresh, warn) = Store::load(&path);

@@ -1,10 +1,13 @@
 import { Glyph } from "theme.slint";
 
 // One line in the notes list. `kind`: 0 note, 1 scheduled, 2 ringing, 3 overdue, 4 done.
+// `category` is empty for notes without one; `tint` is its colour (see Theme.tag).
 export struct ItemRow {
     id: int,
     kind: int,
     title: string,
+    category: string,
+    tint: int,
     preview: string,
     section: string,
     start: string,
@@ -14,6 +17,12 @@ export struct ItemRow {
     ringing: bool,
     note: string,
     top: length,
+}
+
+// A category, for the filter in the list and the picker in the editor.
+export struct CategoryChip {
+    name: string,
+    tint: int,
 }
 
 export struct ReminderRow {
@@ -48,6 +57,7 @@ export struct Keys {
     help: string,
     add-reminder: string,
     remove-reminder: string,
+    category: string,
     quit: string,
 }
 
@@ -62,7 +72,8 @@ export struct NavItem {
 }
 
 // One row on a settings page. `kind`: 0 shortcut, 1 switch, 2 theme picker,
-// 3 button, 4 information, 5 group heading.
+// 3 button, 4 information, 5 group heading, 6 category (`tint` is its colour;
+// `editing` shows a text box for its name).
 export struct SettingCard {
     kind: int,
     glyph: Glyph,
@@ -72,6 +83,8 @@ export struct SettingCard {
     keys: [string],
     on: bool,
     error: string,
+    tint: int,
+    editing: bool,
     top: length,
     height: length,
 }

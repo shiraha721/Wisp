@@ -32,6 +32,23 @@ export global Theme {
 
     out property <length> row-h: 58px;
     out property <length> section-h: 30px;
+
+    // Category colours, by index (CATEGORY_COLORS in src/model.rs).
+    public pure function tag(i: int) -> color {
+        if i == 0 { return dark ? #7aa7ff : #2f6fe4; }
+        if i == 1 { return dark ? #5fd08f : #1e9e57; }
+        if i == 2 { return dark ? #ffaa55 : #e07a10; }
+        if i == 3 { return dark ? #b99bff : #8150e0; }
+        if i == 4 { return dark ? #ff8cc8 : #d43d8b; }
+        if i == 5 { return dark ? #4fd6d3 : #0e9a9a; }
+        if i == 6 { return dark ? #ffd25c : #c99400; }
+        if i == 7 { return dark ? #ff8a80 : #d64234; }
+        return text-3;
+    }
+    // The same colour, faint enough to sit behind text.
+    public pure function tag-soft(i: int) -> color {
+        return tag(i).with-alpha(dark ? 0.2 : 0.13);
+    }
 }
 
 export enum Glyph {
@@ -61,6 +78,7 @@ export enum Glyph {
     cross,
     open,
     back,
+    tag,
 }
 
 // A line icon drawn on a 20×20 grid.
@@ -159,6 +177,9 @@ export component Icon inherits Path {
         }
         if g == Glyph.back {
             return "M8.5 4.75 L3.25 10 L8.5 15.25 M3.5 10 L16.75 10";
+        }
+        if g == Glyph.tag {
+            return "M3.25 4.5 C3.25 3.8 3.8 3.25 4.5 3.25 L9.75 3.25 L16.75 10.25 L10.25 16.75 L3.25 9.75 Z M6.75 6.75 L6.85 6.75";
         }
         return "M10 10 L10 10";
     }

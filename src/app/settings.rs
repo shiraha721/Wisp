@@ -2,10 +2,12 @@
 //!
 //! Keyboard: ↑/↓ move, Enter or Space changes, ←/→ flip switches and pick the
 //! theme, Backspace restores a shortcut's default, Tab or Esc returns to the page
-//! list, and Esc there closes the window.
+//! list, and Esc there closes the window. On a category, Enter renames it, ←/→
+//! change its colour, Alt+↑/↓ move it and Delete (twice) removes it.
 
 use super::{on_wayland, App};
 use crate::config::{self, Action, Theme, ACTIONS};
+use crate::model::CATEGORY_COLORS;
 use crate::platform;
 use crate::shortcuts::Combo;
 use crate::{Glyph, NavItem, SettingCard};
@@ -19,6 +21,11 @@ pub(super) enum Entry {
     Autostart,
     HideInactive,
     OpenOnReminder,
+    /// A category, by id.
+    Category(u64),
+    /// The name of a category being added.
+    NewCategory,
+    AddCategory,
     Summon,
     Shortcut(usize),
     ResetShortcuts,
@@ -33,8 +40,18 @@ struct Page {
     description: &'static str,
 }
 
-const PAGES: [Page; 4] = [
+const GENERAL: usize = 0;
+const CATEGORIES: usize = 1;
+const HOTKEYS: usize = 2;
+const APPEARANCE: usize = 3;
+
+const PAGES: [Page; 5] = [
     Page { glyph: Glyph::Gear, title: "General", description: "How Wisp starts, and how its window behaves." },
+    Page {
+        glyph: Glyph::Tag,
+        title: "Categories",
+        description: "Lists like Daily, Work or School. In Wisp, type #name to file a note in one or to see only that one.",
+    },
     Page {
         glyph: Glyph::Keyboard,
         title: "Hotkeys",
@@ -50,36 +67,12 @@ pub(super) struct SettingsState {
     cursor: usize,
     nav_active: bool,
     recording: bool,
+    /// The category whose name is being typed (or `NewCategory`).
+    editing: Option<Entry>,
+    /// The category that Delete was pressed on once; a second press removes it.
+    confirm_remove: Option<u64>,
     error: Option<(Entry, String)>,
     entries: Vec<Entry>,
-}
-
-fn entries_for(page: usize) -> Vec<Entry> {
-    match page {
-        0 => vec![
-            Entry::Heading("Startup"),
-            Entry::Autostart,
-            Entry::Heading("Window"),
-            Entry::HideInactive,
-            Entry::Heading("Reminders"),
-            Entry::OpenOnReminder,
-        ],
-        1 => {
-            let mut entries = vec![Entry::Heading("Anywhere"), Entry::Summon];
-            let mut group = "";
-            for (i, info) in ACTIONS.iter().enumerate() {
-                if info.group != group {
-                    group = info.group;
-                    entries.push(Entry::Heading(group));
-                }
-                entries.push(Entry::Shortcut(i));
-            }
-            entries.extend([Entry::Heading("Defaults"), Entry::ResetShortcuts]);
-            entries
-        }
-        2 => vec![Entry::Theme],
-        _ => vec![Entry::Version, Entry::Folder],
-    }
 }
 
 fn action_glyph(action: Action) -> Glyph {
@@ -87,6 +80,7 @@ fn action_glyph(action: Action) -> Glyph {
         Action::Schedule => Glyph::Calendar,
         Action::Open => Glyph::Open,
         Action::ToggleDone => Glyph::Check,
+        Action::Category => Glyph::Tag,
         Action::Delete => Glyph::Trash,
         Action::Undo => Glyph::Undo,
         Action::Inbox => Glyph::List,
@@ -116,9 +110,8 @@ impl App {
             self.dismiss();
         }
         self.settings.error = None;
-        if self.settings.entries.is_empty() {
-            self.go_to_page(0);
-        }
+        let current = self.settings.entries.get(self.settings.cursor).copied();
+        self.reload_entries(current);
         self.settings.nav_active = true;
         self.render_settings();
         let window = self.settings_ui.clone_strong();
@@ -139,13 +132,16 @@ impl App {
     }
 
     fn close_settings(&mut self) {
-        self.stop_recording();
+        self.settings_closed();
         let _ = self.settings_ui.hide();
     }
 
-    /// The window was closed with its title-bar button.
+    /// The window was closed (with its title-bar button, or from the keyboard).
     pub fn settings_closed(&mut self) {
         self.stop_recording();
+        if self.settings.editing.is_some() {
+            self.finish_editing(false);
+        }
     }
 
     pub(super) fn settings_toast(&mut self, message: impl Into<SharedString>, error: bool) {
@@ -160,12 +156,67 @@ impl App {
         });
     }
 
+    fn entries_for(&self, page: usize) -> Vec<Entry> {
+        match page {
+            GENERAL => vec![
+                Entry::Heading("Startup"),
+                Entry::Autostart,
+                Entry::Heading("Window"),
+                Entry::HideInactive,
+                Entry::Heading("Reminders"),
+                Entry::OpenOnReminder,
+            ],
+            CATEGORIES => {
+                let mut entries: Vec<Entry> = self.store.categories().iter().map(|c| Entry::Category(c.id)).collect();
+                if self.settings.editing == Some(Entry::NewCategory) {
+                    entries.push(Entry::NewCategory);
+                }
+                entries.push(Entry::AddCategory);
+                entries
+            }
+            HOTKEYS => {
+                let mut entries = vec![Entry::Heading("Anywhere"), Entry::Summon];
+                let mut group = "";
+                for (i, info) in ACTIONS.iter().enumerate() {
+                    if info.group != group {
+                        group = info.group;
+                        entries.push(Entry::Heading(group));
+                    }
+                    entries.push(Entry::Shortcut(i));
+                }
+                entries.extend([Entry::Heading("Defaults"), Entry::ResetShortcuts]);
+                entries
+            }
+            APPEARANCE => vec![Entry::Theme],
+            _ => vec![Entry::Version, Entry::Folder],
+        }
+    }
+
     fn go_to_page(&mut self, page: usize) {
+        if self.settings.editing.is_some() {
+            // Keep a usable name; drop one that isn't.
+            self.finish_editing(true);
+            self.finish_editing(false);
+        }
+        self.settings.page = page.min(PAGES.len() - 1);
+        self.settings.entries = self.entries_for(self.settings.page);
+        self.settings.cursor = self.settings.entries.iter().position(|e| !matches!(e, Entry::Heading(_))).unwrap_or(0);
+        self.settings.error = None;
+        self.settings.confirm_remove = None;
+    }
+
+    /// Rebuilds the current page's entries (after categories change), keeping the
+    /// cursor on `focus` if it's still there, or close to where it was.
+    fn reload_entries(&mut self, focus: Option<Entry>) {
+        self.settings.page = self.settings.page.min(PAGES.len() - 1);
+        let entries = self.entries_for(self.settings.page);
         let s = &mut self.settings;
-        s.page = page.min(PAGES.len() - 1);
-        s.entries = entries_for(s.page);
-        s.cursor = s.entries.iter().position(|e| !matches!(e, Entry::Heading(_))).unwrap_or(0);
-        s.error = None;
+        s.entries = entries;
+        let fallback = s.cursor.min(s.entries.len().saturating_sub(1));
+        s.cursor = focus.and_then(|f| s.entries.iter().position(|e| *e == f)).unwrap_or(fallback);
+        if matches!(s.entries.get(s.cursor), Some(Entry::Heading(_)) | None) {
+            s.cursor = s.entries.iter().position(|e| !matches!(e, Entry::Heading(_))).unwrap_or(0);
+        }
     }
 
     fn render_settings(&mut self) {
@@ -206,7 +257,9 @@ impl App {
         w.set_cursor(s.cursor as i32);
         w.set_nav_active(s.nav_active);
         w.set_recording(s.recording);
+        w.set_editing(s.editing.is_some());
         w.set_cursor_on_shortcut(matches!(current, Some(Entry::Summon | Entry::Shortcut(_))));
+        w.set_cursor_on_category(matches!(current, Some(Entry::Category(_))));
         w.set_theme_choice(match self.config.theme {
             Theme::System => 0,
             Theme::Light => 1,
@@ -240,6 +293,42 @@ impl App {
                 "Shows the window as well as the system notification",
                 self.config.open_on_reminder,
             ),
+            Entry::Category(id) => {
+                let Some(category) = self.store.category(id) else { return SettingCard::default() };
+                let description = match self.store.category_counts(id) {
+                    (0, 0) => "No notes yet".to_owned(),
+                    (open, 0) => format!("{open} open"),
+                    (0, done) => format!("{done} done"),
+                    (open, done) => format!("{open} open, {done} done"),
+                };
+                SettingCard {
+                    kind: 6,
+                    title: category.name.as_str().into(),
+                    description: description.into(),
+                    tint: i32::from(category.color),
+                    editing: self.settings.editing == Some(entry),
+                    ..Default::default()
+                }
+            }
+            Entry::NewCategory => {
+                let used: Vec<u8> = self.store.categories().iter().map(|c| c.color).collect();
+                let color = (0..CATEGORY_COLORS).find(|c| !used.contains(c)).unwrap_or(0);
+                SettingCard {
+                    kind: 6,
+                    description: "Enter adds it, Esc cancels".into(),
+                    tint: i32::from(color),
+                    editing: true,
+                    ..Default::default()
+                }
+            }
+            Entry::AddCategory => SettingCard {
+                kind: 3,
+                glyph: Glyph::Plus,
+                title: "Add a category".into(),
+                description: format!("Then file notes with #name, or with {} on a note", self.label(Action::Category)).into(),
+                value: "Add".into(),
+                ..Default::default()
+            },
             Entry::Summon => {
                 let description = match &self.summon_problem {
                     Some(problem) => problem.clone(),
@@ -317,6 +406,21 @@ impl App {
         }
         let bare = !combo.is_modified() && !combo.shift;
         let key = combo.key.as_str();
+        if self.settings.editing.is_some() {
+            // Everything but these goes to the name box.
+            match key {
+                "Enter" | "Tab" if !combo.is_modified() => self.finish_editing(true),
+                "Escape" if bare => self.finish_editing(false),
+                _ => return false,
+            }
+            self.render_settings();
+            return true;
+        }
+        // Delete on a category asks first; anything else forgets the question.
+        let confirming = self.settings.confirm_remove.take();
+        if confirming.is_some() {
+            self.settings.error = None;
+        }
         let handled = if self.settings.nav_active {
             match key {
                 "Up" | "Down" if bare => {
@@ -344,6 +448,7 @@ impl App {
             }
         } else {
             let current = self.settings.entries.get(self.settings.cursor).copied();
+            let only_alt = combo.alt && !combo.ctrl && !combo.meta && !combo.shift;
             match key {
                 "Escape" if bare => {
                     self.settings.nav_active = true;
@@ -352,6 +457,12 @@ impl App {
                 }
                 "Tab" if !combo.is_modified() => {
                     self.settings.nav_active = true;
+                    true
+                }
+                "Up" | "Down" if only_alt => {
+                    if let Some(Entry::Category(id)) = current {
+                        self.move_category(id, if key == "Up" { -1 } else { 1 });
+                    }
                     true
                 }
                 "Up" | "Down" if bare => {
@@ -366,7 +477,7 @@ impl App {
                     self.move_cursor(if key == "Home" { -1000 } else { 1000 });
                     true
                 }
-                "Enter" | "Space" if bare => {
+                "Enter" | "Space" | "F2" if bare => {
                     self.activate_setting(self.settings.cursor);
                     true
                 }
@@ -383,13 +494,17 @@ impl App {
                             self.config.open_on_reminder = forward;
                             self.save_config();
                         }
+                        Some(Entry::Category(id)) => self.recolor_category(id, if forward { 1 } else { -1 }),
                         _ if !forward => self.settings.nav_active = true,
                         _ => {}
                     }
                     true
                 }
                 "Backspace" | "Delete" if bare => {
-                    self.reset_setting();
+                    match current {
+                        Some(Entry::Category(id)) => self.remove_category(id, confirming == Some(id), "Press Delete again"),
+                        _ => self.reset_setting(),
+                    }
                     true
                 }
                 _ => false,
@@ -402,7 +517,7 @@ impl App {
         match self.config.action_for(&combo) {
             Some(Action::Settings) => self.close_settings(),
             Some(Action::Quit) => self.quit(),
-            Some(Action::Help) => self.go_to_page(1),
+            Some(Action::Help) => self.go_to_page(HOTKEYS),
             _ => return false,
         }
         self.render_settings();
@@ -424,19 +539,32 @@ impl App {
         self.go_to_page(usize::try_from(page).unwrap_or(0));
         self.settings.nav_active = true;
         self.render_settings();
+        self.settings_ui.invoke_take_focus();
     }
 
     pub fn card_clicked(&mut self, index: i32) {
         let Ok(index) = usize::try_from(index) else { return };
-        if matches!(self.settings.entries.get(index), None | Some(Entry::Heading(_))) {
+        let clicked = self.settings.entries.get(index).copied();
+        if matches!(clicked, None | Some(Entry::Heading(_) | Entry::NewCategory)) || clicked == self.settings.editing {
             return;
         }
         self.stop_recording();
+        if self.settings.editing.is_some() {
+            self.finish_editing(true);
+            if self.settings.editing.is_some() {
+                self.render_settings(); // the name needs fixing first
+                return;
+            }
+        }
+        self.settings.confirm_remove = None;
         self.settings.cursor = index;
         self.settings.nav_active = false;
         self.activate_setting(index);
         self.render_settings();
-        self.settings_ui.invoke_take_focus();
+        // A name box takes the keyboard itself as it appears.
+        if self.settings.editing.is_none() {
+            self.settings_ui.invoke_take_focus();
+        }
     }
 
     pub fn theme_clicked(&mut self, mode: i32) {
@@ -452,6 +580,28 @@ impl App {
         }
         self.settings.nav_active = false;
         self.render_settings();
+    }
+
+    /// A category's colour dot was clicked.
+    pub fn swatch_clicked(&mut self, index: i32) {
+        if let Some(&Entry::Category(id)) = usize::try_from(index).ok().and_then(|i| self.settings.entries.get(i)) {
+            self.settings.cursor = index as usize;
+            self.settings.nav_active = false;
+            self.recolor_category(id, 1);
+            self.render_settings();
+        }
+    }
+
+    /// A category's bin button was clicked.
+    pub fn remove_clicked(&mut self, index: i32) {
+        if let Some(&Entry::Category(id)) = usize::try_from(index).ok().and_then(|i| self.settings.entries.get(i)) {
+            let confirmed = self.settings.confirm_remove.take() == Some(id);
+            self.settings.cursor = index as usize;
+            self.settings.nav_active = false;
+            self.remove_category(id, confirmed, "Click the bin again");
+            self.render_settings();
+            self.settings_ui.invoke_take_focus();
+        }
     }
 
     fn activate_setting(&mut self, index: usize) {
@@ -474,6 +624,16 @@ impl App {
                 self.config.open_on_reminder = !self.config.open_on_reminder;
                 self.save_config();
             }
+            Some(entry @ Entry::Category(id)) => {
+                let name = self.store.category(id).map(|c| c.name.clone()).unwrap_or_default();
+                self.settings_ui.set_edit_text(name.into());
+                self.settings.editing = Some(entry);
+            }
+            Some(Entry::AddCategory) => {
+                self.settings_ui.set_edit_text(SharedString::new());
+                self.settings.editing = Some(Entry::NewCategory);
+                self.reload_entries(Some(Entry::NewCategory));
+            }
             Some(Entry::Theme) => self.cycle_theme(1),
             Some(Entry::ResetShortcuts) => {
                 self.config.shortcuts.clear();
@@ -487,7 +647,7 @@ impl App {
                 self.apply_config_to_ui();
             }
             Some(Entry::Folder) => platform::reveal(&self.data_dir),
-            Some(Entry::Version | Entry::Heading(_)) | None => {}
+            Some(Entry::Version | Entry::Heading(_) | Entry::NewCategory) | None => {}
         }
     }
 
@@ -509,6 +669,85 @@ impl App {
             _ => {}
         }
     }
+
+    // -----------------------------------------------------------------------
+    // Categories
+
+    /// Saves (or with `save` false, drops) the name being typed. A name that can't
+    /// be used keeps the box open with the reason.
+    fn finish_editing(&mut self, save: bool) {
+        let Some(entry) = self.settings.editing else { return };
+        let name = self.settings_ui.get_edit_text().to_string();
+        let result = match entry {
+            _ if !save => Ok(None),
+            Entry::NewCategory => self.store.add_category(&name).map(Some),
+            Entry::Category(id) => self.store.rename_category(id, &name).map(|()| Some(id)),
+            _ => Ok(None),
+        };
+        match result {
+            Err(problem) => self.settings.error = Some((entry, problem)),
+            Ok(saved) => {
+                self.settings.editing = None;
+                self.settings.error = None;
+                if saved.is_some() {
+                    self.persist();
+                    self.categories_changed();
+                }
+                let focus = match (saved, entry) {
+                    (Some(id), _) => Entry::Category(id),
+                    (None, Entry::NewCategory) => Entry::AddCategory,
+                    (None, other) => other,
+                };
+                self.reload_entries(Some(focus));
+                self.settings_ui.invoke_take_focus();
+            }
+        }
+    }
+
+    fn recolor_category(&mut self, id: u64, delta: i32) {
+        self.store.recolor_category(id, delta);
+        self.persist();
+        self.categories_changed();
+    }
+
+    fn move_category(&mut self, id: u64, delta: i32) {
+        if self.store.move_category(id, delta) {
+            self.persist();
+            self.categories_changed();
+            self.reload_entries(Some(Entry::Category(id)));
+        }
+    }
+
+    /// Removes a category once `confirmed`; until then, explains what will happen.
+    fn remove_category(&mut self, id: u64, confirmed: bool, again: &str) {
+        let Some(name) = self.store.category(id).map(|c| c.name.clone()) else { return };
+        if !confirmed {
+            let (open, done) = self.store.category_counts(id);
+            let message = if open + done == 0 {
+                format!("{again} to remove it.")
+            } else {
+                format!("{again} to remove it. Its notes stay, without a category.")
+            };
+            self.settings.confirm_remove = Some(id);
+            self.settings.error = Some((Entry::Category(id), message));
+            return;
+        }
+        self.store.remove_category(id);
+        self.persist();
+        self.categories_changed();
+        self.settings.error = None;
+        self.reload_entries(None);
+        self.settings_toast(format!("Removed “{name}”."), false);
+    }
+
+    /// Brings the launcher up to date after categories were added, renamed or removed.
+    fn categories_changed(&mut self) {
+        self.push_categories();
+        self.refresh();
+    }
+
+    // -----------------------------------------------------------------------
+    // Shortcuts
 
     fn stop_recording(&mut self) {
         if !self.settings.recording {

@@ -25,6 +25,7 @@ pub enum Action {
     Schedule,
     Open,
     ToggleDone,
+    Category,
     Delete,
     Undo,
     Inbox,
@@ -70,6 +71,14 @@ pub const ACTIONS: &[ActionInfo] = &[
         label: "Mark done / bring back",
         description: "Done notes move to the Done list instead of being deleted",
         default: "Ctrl+D",
+    },
+    ActionInfo {
+        action: Action::Category,
+        id: "category",
+        group: "Your notes",
+        label: "Change category",
+        description: "Of the selected note, the note you're editing, or what you're typing. Add Shift to go back",
+        default: "Ctrl+T",
     },
     ActionInfo {
         action: Action::Delete,

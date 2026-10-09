@@ -33,6 +33,7 @@ pub(super) struct EditSession {
     auto_reminder_done: bool,
     /// The last close attempt stopped on a problem; closing again saves what it can.
     escape_armed: bool,
+    category: Option<u64>,
 }
 
 impl App {
@@ -59,6 +60,7 @@ impl App {
             _ => format!("on {age}"),
         };
         ui.set_edit_meta(format!("Written {age}").into());
+        ui.set_edit_category(self.category_index(item.category));
         ui.set_back_label(if self.listing == View::Archive { "Done" } else { "Notes" }.into());
 
         let kinds: Vec<usize> = item.reminders.iter().map(|r| r.rule.kind()).collect();
@@ -68,6 +70,7 @@ impl App {
 
         self.editor = Some(EditSession {
             id,
+            category: item.category,
             before: item,
             kinds,
             return_to: self.listing,
@@ -175,6 +178,42 @@ impl App {
         let amount = if minutes_kind(old) && minutes_kind(next) { amount } else { Rule::default_amount(next).to_owned() };
         self.reminders.set_row_data(index, reminder_row(next, &amount, false));
         self.update_editor();
+    }
+
+    /// The picker chose category `index` (-1: none).
+    pub fn category_picked(&mut self, index: i32) {
+        let id = usize::try_from(index).ok().and_then(|i| self.store.categories().get(i)).map(|c| c.id);
+        self.set_editor_category(id);
+    }
+
+    pub fn category_cycled(&mut self, step: i32) {
+        let Some(current) = self.editor.as_ref().map(|e| e.category) else { return };
+        if self.no_categories_yet() {
+            return;
+        }
+        self.set_editor_category(super::step_category(self.store.categories(), current, step));
+    }
+
+    fn set_editor_category(&mut self, id: Option<u64>) {
+        let Some(session) = self.editor.as_mut() else { return };
+        session.category = id;
+        session.escape_armed = false;
+        self.ui().set_edit_category(self.category_index(id));
+    }
+
+    /// Typing a letter on the picker jumps to the next category that starts with it.
+    fn category_by_letter(&mut self, letter: &str) {
+        let Some(current) = self.editor.as_ref().map(|e| e.category) else { return };
+        let categories = self.store.categories();
+        let start = current.and_then(|id| categories.iter().position(|c| c.id == id)).map_or(0, |i| i + 1);
+        let letter = letter.to_lowercase();
+        let found = (0..categories.len())
+            .map(|k| &categories[(start + k) % categories.len()])
+            .find(|c| c.name.to_lowercase().starts_with(&letter))
+            .map(|c| c.id);
+        if found.is_some() {
+            self.set_editor_category(found);
+        }
     }
 
     /// Removes reminder `index` and moves the keyboard to its neighbour.
@@ -313,6 +352,7 @@ impl App {
 
         let id = session.id;
         let before = session.before.clone();
+        let category = session.category;
         let mut title = ui.get_edit_title().trim().to_owned();
         let mut notes = ui.get_edit_notes().trim().replace("\r\n", "\n");
         self.editor = None;
@@ -327,6 +367,7 @@ impl App {
         let Some(mut item) = self.store.get(id).cloned() else { return Ok(None) };
         item.text = title;
         item.notes = notes;
+        item.category = category;
         item.start = start;
         item.due = due;
         let previous = std::mem::take(&mut item.reminders);
@@ -342,6 +383,7 @@ impl App {
         }
         let changed = item.text != before.text
             || item.notes != before.notes
+            || item.category != before.category
             || item.start != before.start
             || item.due != before.due
             || item.reminders.iter().map(|r| r.rule).ne(before.reminders.iter().map(|r| r.rule));
@@ -394,6 +436,23 @@ impl App {
     pub(super) fn key_editor(&mut self, combo: &Combo, action: Option<Action>, context: &str) -> bool {
         let bare = !combo.is_modified() && !combo.shift;
         let on_kind = context.starts_with("edit-reminder-kind:");
+        if context == "edit-category" && bare {
+            match combo.key.as_str() {
+                "Left" | "Right" | "Space" => {
+                    self.category_cycled(if combo.key == "Left" { -1 } else { 1 });
+                    return true;
+                }
+                "Delete" | "Backspace" => {
+                    self.set_editor_category(None);
+                    return true;
+                }
+                key if key.chars().count() == 1 && key.chars().all(char::is_alphanumeric) => {
+                    self.category_by_letter(key);
+                    return true;
+                }
+                _ => {}
+            }
+        }
         match combo.key.as_str() {
             "Escape" if bare => {
                 let force = self.editor.as_ref().is_some_and(|e| e.escape_armed);
@@ -435,6 +494,7 @@ impl App {
             }
             Action::AddReminder => self.add_reminder(),
             Action::RemoveReminder => self.remove_reminder_here(context),
+            Action::Category => self.category_cycled(self.category_step(combo)),
             Action::ToggleDone => {
                 if let Some(id) = self.editor.as_ref().map(|e| e.id) {
                     if self.close_editor(false) {

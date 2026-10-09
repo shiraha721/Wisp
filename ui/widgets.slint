@@ -81,6 +81,51 @@ export component Tile inherits Rectangle {
     }
 }
 
+// A category's colour, as a dot.
+export component TagDot inherits Rectangle {
+    in property <int> tint;
+    in property <length> size: 8px;
+    width: root.size;
+    height: root.size;
+    border-radius: root.size / 2;
+    background: Theme.tag(root.tint);
+}
+
+// A category as a pill: "● Work". `tint` -1 has no dot ("All", "None"). `chosen`
+// fills it; `ring` outlines it while the keyboard is on it.
+export component TagChip inherits Rectangle {
+    in property <string> label;
+    in property <int> tint: -1;
+    in property <bool> chosen;
+    in property <bool> ring;
+    callback clicked();
+    height: 24px;
+    width: row.preferred-width;
+    border-radius: 12px;
+    background: root.chosen ? (root.tint >= 0 ? Theme.tag-soft(root.tint) : Theme.accent-soft) : touch.has-hover ? Theme.hover : transparent;
+    border-width: root.ring ? 1.5px : 0px;
+    border-color: Theme.accent;
+    row := HorizontalLayout {
+        padding-left: root.tint >= 0 ? 9px : 11px;
+        padding-right: 11px;
+        spacing: 6px;
+        if root.tint >= 0 : VerticalLayout {
+            alignment: center;
+            TagDot { tint: root.tint; }
+        }
+        Text {
+            text: root.label;
+            font-size: 12.5px;
+            color: root.chosen ? Theme.text : Theme.text-2;
+            vertical-alignment: center;
+        }
+    }
+    touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
 export component Card inherits Rectangle {
     in property <bool> focused;
     background: Theme.surface;

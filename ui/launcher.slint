@@ -2,8 +2,8 @@
 // the shortcut list, modelled on Flow Launcher's main window.
 
 import { Theme, Glyph, Icon } from "theme.slint";
-import { Keycap, KeyHintView, Tile, Card, IconButton, Meta, Scribble, InputBox } from "widgets.slint";
-import { ItemRow, ReminderRow, Hint, HelpRow, Keys, KeyHint } from "types.slint";
+import { Keycap, KeyHintView, Tile, Card, IconButton, Meta, Scribble, InputBox, TagDot, TagChip } from "widgets.slint";
+import { ItemRow, ReminderRow, Hint, HelpRow, Keys, KeyHint, CategoryChip } from "types.slint";
 
 export enum View { inbox, archive, editor, help }
 
@@ -64,7 +64,7 @@ component NoteLine inherits Rectangle {
     callback open();
     callback toggle();
     property <length> head: root.item.section != "" ? Theme.section-h : 0px;
-    property <bool> has-subtitle: root.item.start != "" || root.item.due != "" || root.item.bells > 0 || root.item.preview != "";
+    property <bool> has-subtitle: root.item.category != "" || root.item.start != "" || root.item.due != "" || root.item.bells > 0 || root.item.preview != "";
     height: root.head + Theme.row-h;
 
     if root.item.section != "" : Text {
@@ -129,6 +129,23 @@ component NoteLine inherits Rectangle {
                 }
                 if root.has-subtitle : HorizontalLayout {
                     spacing: 12px;
+                    if root.item.category != "" : HorizontalLayout {
+                        horizontal-stretch: 0;
+                        spacing: 5px;
+                        VerticalLayout {
+                            alignment: center;
+                            TagDot {
+                                tint: root.item.tint;
+                                size: 7px;
+                            }
+                        }
+                        Text {
+                            text: root.item.category;
+                            font-size: 12px;
+                            color: Theme.text-2;
+                            vertical-alignment: center;
+                        }
+                    }
                     if root.item.start != "" : Meta {
                         glyph: Glyph.calendar;
                         text: root.item.start;
@@ -199,7 +216,7 @@ component DateRow inherits Rectangle {
             }
         }
         Text {
-            width: 52px;
+            width: 64px;
             text: root.label;
             font-size: 13px;
             color: Theme.text;
@@ -353,6 +370,58 @@ component ReminderLine inherits Rectangle {
     }
 }
 
+// Chips for picking a note's category: ←/→ move between them.
+component CategoryPicker inherits FocusScope {
+    in property <[CategoryChip]> categories;
+    in property <int> chosen: -1;
+    in property <bool> active;
+    callback pick(int);
+    callback cycle(int);
+    enabled: root.active;
+    height: 30px;
+    // Normally Rust handles these keys first; this is the fallback.
+    key-pressed(e) => {
+        if e.text == Key.LeftArrow || e.text == Key.RightArrow || e.text == " " {
+            root.cycle(e.text == Key.LeftArrow ? -1 : 1);
+            return accept;
+        }
+        if e.text == Key.Delete || e.text == Key.Backspace {
+            root.pick(-1);
+            return accept;
+        }
+        reject
+    }
+    HorizontalLayout {
+        alignment: start;
+        spacing: 6px;
+        VerticalLayout {
+            alignment: center;
+            TagChip {
+                label: "None";
+                chosen: root.chosen < 0;
+                ring: root.has-focus && root.chosen < 0;
+                clicked => {
+                    root.focus();
+                    root.pick(-1);
+                }
+            }
+        }
+        for c[i] in root.categories : VerticalLayout {
+            alignment: center;
+            TagChip {
+                label: c.name;
+                tint: c.tint;
+                chosen: root.chosen == i;
+                ring: root.has-focus && root.chosen == i;
+                clicked => {
+                    root.focus();
+                    root.pick(i);
+                }
+            }
+        }
+    }
+}
+
 component EditorPane inherits Rectangle {
     in-out property <string> notes;
     in-out property <string> start;
@@ -364,6 +433,9 @@ component EditorPane inherits Rectangle {
     in property <bool> active;
     in property <bool> can-add;
     in property <string> add-keys;
+    in property <[CategoryChip]> categories;
+    in property <int> category: -1;
+    out property <bool> category-focused: picker.has-focus;
     out property <bool> notes-focused: notes-box.has-focus;
     out property <bool> date-focused: start-row.has-focus || due-row.has-focus;
     out property <bool> add-focused: add.has-focus;
@@ -373,7 +445,12 @@ component EditorPane inherits Rectangle {
     callback cycle(int, int);
     callback remove(int);
     callback add-reminder();
+    callback pick-category(int);
+    callback cycle-category(int);
 
+    public function focus-category() {
+        picker.focus();
+    }
     public function focus-notes() {
         notes-box.take-focus();
         notes-box.cursor-to-end();
@@ -446,6 +523,44 @@ component EditorPane inherits Rectangle {
                         changed has-focus => {
                             if self.has-focus {
                                 root.reveal(self.absolute-position.y, self.height);
+                            }
+                        }
+                    }
+                }
+            }
+
+            Card {
+                HorizontalLayout {
+                    padding-left: 14px;
+                    padding-right: 14px;
+                    height: 46px;
+                    spacing: 10px;
+                    VerticalLayout {
+                        alignment: center;
+                        Icon {
+                            glyph: Glyph.tag;
+                            icon-size: 16px;
+                        }
+                    }
+                    Text {
+                        width: 64px;
+                        text: "Category";
+                        font-size: 13px;
+                        color: Theme.text;
+                        vertical-alignment: center;
+                    }
+                    VerticalLayout {
+                        alignment: center;
+                        picker := CategoryPicker {
+                            categories: root.categories;
+                            chosen: root.category;
+                            active: root.active;
+                            pick(i) => { root.pick-category(i); }
+                            cycle(d) => { root.cycle-category(d); }
+                            changed has-focus => {
+                                if self.has-focus {
+                                    root.reveal(self.absolute-position.y, self.height);
+                                }
                             }
                         }
                     }
@@ -677,6 +792,9 @@ export component AppWindow inherits Window {
     in property <string> clock-date;
     in property <string> empty-title;
     in property <string> empty-body;
+    // The categories, and which one the typed `#word` picks (-1: all).
+    in property <[CategoryChip]> categories;
+    in property <int> category-filter: -1;
 
     in-out property <string> edit-title;
     in-out property <string> edit-notes;
@@ -689,6 +807,7 @@ export component AppWindow inherits Window {
     in property <[ReminderRow]> reminders;
     in property <[Hint]> reminder-hints;
     in property <bool> can-add-reminder;
+    in property <int> edit-category: -1;
     in-out property <int> focused-reminder <=> editor.focused-reminder;
 
     in property <[HelpRow]> help;
@@ -703,6 +822,11 @@ export component AppWindow inherits Window {
     callback row-opened(int);
     callback row-toggled(int);
     callback tab-clicked(int);
+    // A category chip above the list (-1: All).
+    callback category-clicked(int);
+    // The editor's category picker: choose one (-1: none) or step through them.
+    callback category-picked(int);
+    callback category-cycled(int);
     callback settings-clicked();
     callback back-clicked();
     callback editor-edited();
@@ -714,9 +838,11 @@ export component AppWindow inherits Window {
         capture.take-focus();
         capture.cursor-to-end();
     }
-    // 0 title, 1 notes, 2 starts, 3 due, 4 "add a reminder"
+    // 0 title, 1 notes, 2 starts, 3 due, 4 "add a reminder", 5 category
     public function focus-editor(field: int) {
-        if field == 1 {
+        if field == 5 {
+            editor.focus-category();
+        } else if field == 1 {
             editor.focus-notes();
         } else if field == 2 {
             editor.focus-start();
@@ -734,7 +860,7 @@ export component AppWindow inherits Window {
     }
 
     property <bool> listing: root.view == View.inbox || root.view == View.archive;
-    property <bool> on-reminder: root.view == View.editor && root.focused-reminder >= 0 && !editor.notes-focused && !editor.date-focused && !editor.add-focused && !title-box.has-focus;
+    property <bool> on-reminder: root.view == View.editor && root.focused-reminder >= 0 && !editor.notes-focused && !editor.date-focused && !editor.add-focused && !editor.category-focused && !title-box.has-focus;
 
     pure function context() -> string {
         if capture.has-focus {
@@ -746,6 +872,9 @@ export component AppWindow inherits Window {
         if root.view == View.editor {
             if editor.notes-focused {
                 return "edit-notes";
+            }
+            if editor.category-focused {
+                return "edit-category";
             }
             if editor.date-focused {
                 return "edit-date";
@@ -792,6 +921,11 @@ export component AppWindow inherits Window {
         { keys: "Enter", label: "New line" },
         { keys: "Tab", label: "Next field" },
         { keys: "Esc", label: "Save and close" },
+    ] : editor.category-focused ? [
+        { keys: "← →", label: "Change category" },
+        { keys: "Del", label: "No category" },
+        { keys: "Tab", label: "Next field" },
+        { keys: "Esc", label: "Save and close" },
     ] : editor.date-focused ? [
         { keys: "Enter", label: "Save and close" },
         { keys: "Tab", label: "Next field" },
@@ -809,8 +943,8 @@ export component AppWindow inherits Window {
     ] : root.selected >= 0 ? [
         { keys: "Enter", label: "Open" },
         { keys: root.keys.done, label: root.view == View.archive ? "Bring back" : "Mark done" },
+        { keys: root.keys.category, label: "Category" },
         { keys: root.keys.delete, label: "Delete" },
-        { keys: "Esc", label: "Back to typing" },
     ] : root.view == View.archive ? [
         { keys: "↓", label: "Browse" },
         { keys: root.keys.inbox, label: "Notes" },
@@ -819,8 +953,8 @@ export component AppWindow inherits Window {
     ] : [
         { keys: "Enter", label: "Save" },
         { keys: root.keys.schedule, label: "Save with a date" },
+        { keys: root.keys.category, label: "Category" },
         { keys: "↓", label: "Browse" },
-        { keys: root.keys.settings, label: "Settings" },
         { keys: root.keys.help, label: "Shortcuts" },
     ];
 
@@ -944,7 +1078,43 @@ export component AppWindow inherits Window {
                             active: root.view == View.archive;
                             clicked => { root.tab-clicked(1); }
                         }
-                        Rectangle { horizontal-stretch: 1; }
+                        if root.categories.length > 0 : VerticalLayout {
+                            alignment: center;
+                            padding-left: 6px;
+                            padding-right: 8px;
+                            Rectangle {
+                                width: 1px;
+                                height: 18px;
+                                background: Theme.stroke;
+                            }
+                        }
+                        // The category filter. Long lists scroll sideways rather than push the status out.
+                        Flickable {
+                            horizontal-stretch: 1;
+                            content-width: chips.preferred-width;
+                            chips := HorizontalLayout {
+                                height: 38px;
+                                alignment: start;
+                                spacing: 2px;
+                                if root.categories.length > 0 : VerticalLayout {
+                                    alignment: center;
+                                    TagChip {
+                                        label: "All";
+                                        chosen: root.category-filter < 0;
+                                        clicked => { root.category-clicked(-1); }
+                                    }
+                                }
+                                for c[i] in root.categories : VerticalLayout {
+                                    alignment: center;
+                                    TagChip {
+                                        label: c.name;
+                                        tint: c.tint;
+                                        chosen: root.category-filter == i;
+                                        clicked => { root.category-clicked(i); }
+                                    }
+                                }
+                            }
+                        }
                         Text {
                             text: root.status;
                             font-size: 12px;
@@ -1061,6 +1231,10 @@ export component AppWindow inherits Window {
                         reminder-hints: root.reminder-hints;
                         can-add: root.can-add-reminder;
                         add-keys: root.keys.add-reminder;
+                        categories: root.categories;
+                        category: root.edit-category;
+                        pick-category(i) => { root.category-picked(i); }
+                        cycle-category(d) => { root.category-cycled(d); }
                         edited => { root.editor-edited(); }
                         cycle(i, d) => { root.reminder-cycle(i, d); }
                         remove(i) => { root.reminder-remove(i); }

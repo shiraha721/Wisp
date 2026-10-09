@@ -8,10 +8,10 @@ mod settings;
 
 use crate::config::{self, Action, Config, Theme};
 use crate::dates;
-use crate::model::{self, Item, Store};
+use crate::model::{self, Category, Item, Store};
 use crate::platform;
 use crate::shortcuts::Combo;
-use crate::{AppWindow, HelpRow, ItemRow, Keys, ReminderRow, SettingsWindow, View};
+use crate::{AppWindow, CategoryChip, HelpRow, ItemRow, Keys, ReminderRow, SettingsWindow, View};
 use chrono::{DateTime, Local, TimeZone};
 use global_hotkey::hotkey::HotKey;
 use global_hotkey::GlobalHotKeyManager;
@@ -87,6 +87,8 @@ pub struct App {
     last_typed: Option<Instant>,
     editor: Option<editor::EditSession>,
     reminders: Rc<VecModel<ReminderRow>>,
+    /// The categories, for the filter chips and the editor's picker.
+    categories: Rc<VecModel<CategoryChip>>,
     settings: settings::SettingsState,
     hotkeys: Option<GlobalHotKeyManager>,
     /// The registered summon hotkey and the keys it stands for.
@@ -106,7 +108,12 @@ pub struct App {
 
 impl App {
     pub fn new(ui: &AppWindow, settings_ui: SettingsWindow, data_dir: PathBuf, portable: bool) -> App {
-        let (store, store_warning) = Store::load(&data_dir.join("notes.json"));
+        let (mut store, store_warning) = Store::load(&data_dir.join("notes.json"));
+        if store.seed_categories(&["Daily", "Work", "School"]) && store_warning.is_none() {
+            if let Err(err) = store.save() {
+                eprintln!("wisp: couldn't save notes: {err}");
+            }
+        }
         let config_path = data_dir.join("settings.json");
         let (mut config, config_warning) = Config::load(&config_path);
 
@@ -124,6 +131,8 @@ impl App {
 
         let reminders = Rc::new(VecModel::default());
         ui.set_reminders(ModelRc::from(reminders.clone()));
+        let categories = Rc::new(VecModel::default());
+        ui.set_categories(ModelRc::from(categories.clone()));
 
         let mut app = App {
             ui: ui.as_weak(),
@@ -141,6 +150,7 @@ impl App {
             last_typed: None,
             editor: None,
             reminders,
+            categories,
             settings: settings::SettingsState::default(),
             hotkeys: None,
             summon: None,
@@ -161,6 +171,7 @@ impl App {
         app.claim_summon();
 
         app.apply_config_to_ui();
+        app.push_categories();
         app.refresh();
         if let Some(warning) = store_warning.or(config_warning) {
             app.toast(warning, true);
@@ -371,7 +382,11 @@ impl App {
         let Some(combo) = Combo::from_event(text, ctrl, alt, shift, meta) else {
             return false; // lone modifier presses, input-method text
         };
-        let action = self.config.action_for(&combo);
+        let action = self.config.action_for(&combo).or_else(|| {
+            // Shift added to the category key goes backwards.
+            let plain = Combo { shift: false, ..combo.clone() };
+            (combo.shift && self.config.action_for(&plain) == Some(Action::Category)).then_some(Action::Category)
+        });
         match self.ui().get_view() {
             View::Inbox | View::Archive => self.key_list(&combo, action),
             View::Editor => self.key_editor(&combo, action, context),
@@ -430,6 +445,13 @@ impl App {
                 Some(id) => self.toggle_done(id),
                 None => self.toast("Pick a note with ↓ first.", false),
             },
+            Action::Category => {
+                let step = self.category_step(combo);
+                match self.selected_item_id() {
+                    Some(id) => self.cycle_note_category(id, step),
+                    None => self.cycle_query_category(step),
+                }
+            }
             Action::Delete => match self.selected_item_id() {
                 Some(id) => self.delete(id),
                 None => self.toast("Pick a note with ↓ first.", false),
@@ -570,26 +592,125 @@ impl App {
         }
     }
 
-    /// Saves what's in the input as a new note: the first line is the title, the rest its notes.
+    /// Saves what's in the input as a new note: the first line is the title, the rest
+    /// its notes, and a `#category` word files it there.
     fn capture(&mut self, then_edit: bool) {
         let ui = self.ui();
-        let text = ui.get_query();
+        let (category, text) = model::take_category(self.store.categories(), &ui.get_query());
         if text.trim().is_empty() {
             return;
         }
         let (title, notes) = model::split_title(&text);
         let id = self.store.add(&title, &notes, Self::now().timestamp());
+        let category = category.and_then(|c| self.store.category(c)).cloned();
+        if let Some(item) = self.store.get_mut(id) {
+            item.category = category.as_ref().map(|c| c.id);
+        }
         self.remember(UndoStep::Created(id));
         self.persist();
-        ui.set_query(SharedString::new());
+        // Stay in the category, ready for the next note.
+        let keep = category.as_ref().map(|c| format!("{} ", c.token())).unwrap_or_default();
+        ui.set_query(keep.into());
         self.select(None);
         self.refresh();
         if then_edit {
             self.open_editor(id, editor::FIELD_START);
         } else {
             let undo = self.label(Action::Undo);
-            self.toast(format!("Saved. {undo} takes it back."), false);
+            match category {
+                Some(c) => self.toast(format!("Saved to {}. {undo} takes it back.", c.name), false),
+                None => self.toast(format!("Saved. {undo} takes it back."), false),
+            }
         }
+    }
+
+    // -----------------------------------------------------------------------
+    // Categories
+
+    /// Sends the category list to the filter chips and the editor's picker.
+    fn push_categories(&mut self) {
+        let chips: Vec<CategoryChip> =
+            self.store.categories().iter().map(|c| CategoryChip { name: c.name.as_str().into(), tint: i32::from(c.color) }).collect();
+        self.categories.set_vec(chips);
+    }
+
+    /// The position of a category in the list (for the UI), or -1.
+    fn category_index(&self, id: Option<u64>) -> i32 {
+        id.and_then(|id| self.store.categories().iter().position(|c| c.id == id)).map_or(-1, |i| i as i32)
+    }
+
+    /// 1 for the category key, -1 when Shift was added to it.
+    fn category_step(&self, combo: &Combo) -> i32 {
+        if combo.shift && !self.config.combo(Action::Category).shift {
+            -1
+        } else {
+            1
+        }
+    }
+
+    fn no_categories_yet(&mut self) -> bool {
+        if !self.store.categories().is_empty() {
+            return false;
+        }
+        let settings = self.label(Action::Settings);
+        self.toast(format!("There are no categories yet. Add some in Settings ({settings})."), false);
+        true
+    }
+
+    /// Moves a note to the next (or previous) category, passing through "none".
+    fn cycle_note_category(&mut self, id: u64, step: i32) {
+        if self.no_categories_yet() {
+            return;
+        }
+        let Some(item) = self.store.get(id) else { return };
+        let next = step_category(self.store.categories(), item.category, step);
+        let name = next.and_then(|c| self.store.category(c)).map(|c| c.name.clone());
+        let before = item.clone();
+        if let Some(item) = self.store.get_mut(id) {
+            item.category = next;
+            item.updated = Self::now().timestamp();
+        }
+        self.remember(UndoStep::Changed(before));
+        self.persist();
+        self.refresh();
+        match name {
+            Some(name) => self.toast(format!("Moved to {name}."), false),
+            None => self.toast("Took it out of its category.", false),
+        }
+    }
+
+    /// Steps the `#category` word in the input, which picks the category shown and
+    /// the one the next note is saved to.
+    fn cycle_query_category(&mut self, step: i32) {
+        if self.no_categories_yet() {
+            return;
+        }
+        let (current, _) = model::take_category(self.store.categories(), &self.ui().get_query());
+        let next = step_category(self.store.categories(), current, step);
+        self.set_query_category(next);
+    }
+
+    /// Puts `#name` for `category` in the input in place of any category word there,
+    /// or takes it out for `None`.
+    fn set_query_category(&mut self, category: Option<u64>) {
+        let ui = self.ui();
+        let (_, rest) = model::take_category(self.store.categories(), &ui.get_query());
+        let rest = rest.trim_end();
+        let text = match category.and_then(|id| self.store.category(id)).map(Category::token) {
+            Some(token) if rest.is_empty() => format!("{token} "),
+            Some(token) => format!("{rest} {token} "),
+            None => rest.to_owned(),
+        };
+        ui.set_query(text.into());
+        self.select(None);
+        self.refresh();
+        ui.invoke_focus_capture();
+    }
+
+    /// A chip above the list was clicked (-1: All).
+    pub fn category_clicked(&mut self, index: i32) {
+        let id = usize::try_from(index).ok().and_then(|i| self.store.categories().get(i)).map(|c| c.id);
+        self.set_query_category(id);
     }
 
     fn toggle_done(&mut self, id: u64) {
@@ -637,10 +758,13 @@ impl App {
         let restored = match step {
             UndoStep::Created(id) => {
                 if let Some((_, item)) = self.store.remove(id) {
-                    // Put the words back where they were typed.
+                    // Put the words back where they were typed (a lone category word doesn't count).
                     let ui = self.ui();
-                    if ui.get_query().trim().is_empty() {
-                        let text = if item.notes.is_empty() { item.text } else { format!("{}\n{}", item.text, item.notes) };
+                    if model::take_category(self.store.categories(), &ui.get_query()).1.trim().is_empty() {
+                        let mut text = if item.notes.is_empty() { item.text } else { format!("{}\n{}", item.text, item.notes) };
+                        if let Some(c) = item.category.and_then(|c| self.store.category(c)) {
+                            text = format!("{text} {}", c.token());
+                        }
                         ui.set_query(text.into());
                     }
                 }
@@ -683,12 +807,19 @@ impl App {
         ui.set_clock_date(now.format("%a, %b %-d").to_string().into());
 
         let archive = self.listing == View::Archive;
-        let query = ui.get_query();
+        // A `#category` word in the input shows only that category.
+        let (filter, query) = model::take_category(self.store.categories(), &ui.get_query());
         let at = |t: i64| Local.timestamp_opt(t, 0).single().unwrap_or(now);
 
         let open_count = self.store.data.items.iter().filter(|i| !i.is_done()).count();
         let done_count = self.store.data.items.len() - open_count;
-        let mut items: Vec<&Item> = self.store.data.items.iter().filter(|i| i.is_done() == archive && i.matches(&query)).collect();
+        let mut items: Vec<&Item> = self
+            .store
+            .data
+            .items
+            .iter()
+            .filter(|i| i.is_done() == archive && filter.is_none_or(|c| i.category == Some(c)) && i.matches(&query))
+            .collect();
 
         let mut sections: Vec<String> = Vec::new();
         if archive {
@@ -743,10 +874,13 @@ impl App {
             } else {
                 0
             };
+            let category = item.category.and_then(|c| self.store.category(c));
             rows.push(ItemRow {
                 id: item.id as i32,
                 kind,
                 title: item.title().into(),
+                category: category.map(|c| c.name.as_str()).unwrap_or_default().into(),
+                tint: category.map_or(-1, |c| i32::from(c.color)),
                 preview: item.notes_preview().into(),
                 section: section.as_str().into(),
                 start: start.into(),
@@ -777,21 +911,26 @@ impl App {
 
         ui.set_open_count(open_count as i32);
         ui.set_done_count(done_count as i32);
-        let filtered = !query.trim().is_empty();
+        ui.set_category_filter(self.category_index(filter));
+        let typed = !query.trim().is_empty();
         let total = if archive { done_count } else { open_count };
         let shown = self.rows.len();
-        ui.set_status(if filtered && total > 0 { format!("{shown} of {total} match").into() } else { SharedString::new() });
+        ui.set_status(if (typed || filter.is_some()) && total > 0 { format!("{shown} of {total} match").into() } else { SharedString::new() });
 
         let summon = self.summon_label();
-        let (title, body) = match (archive, filtered) {
-            (false, false) if self.store.data.items.is_empty() => {
+        let category = filter.and_then(|c| self.store.category(c)).map(|c| c.name.clone());
+        let (title, body) = match (archive, typed, category) {
+            (false, false, Some(name)) => (format!("Nothing in {name} yet"), "Type a note and press Enter to file it here.".to_owned()),
+            (true, false, Some(name)) => (format!("Nothing done in {name} yet"), String::new()),
+            (false, false, None) if self.store.data.items.is_empty() => {
                 ("Nothing written yet".to_owned(), format!("Type above and press Enter. {summon} opens Wisp from any app."))
             }
-            (false, false) => ("All clear".to_owned(), "Notes you mark done wait in the Done tab.".to_owned()),
-            (false, true) if open_count == 0 => ("Press Enter to save it".to_owned(), String::new()),
-            (false, true) => ("No notes match".to_owned(), "Press Enter to save this as a new note.".to_owned()),
-            (true, false) => ("Nothing done yet".to_owned(), format!("Mark a note done with {} and it moves here.", self.label(Action::ToggleDone))),
-            (true, true) => ("Nothing done matches".to_owned(), String::new()),
+            (false, false, None) => ("All clear".to_owned(), "Notes you mark done wait in the Done tab.".to_owned()),
+            (false, true, _) if open_count == 0 => ("Press Enter to save it".to_owned(), String::new()),
+            (false, true, Some(name)) => ("No notes match".to_owned(), format!("Press Enter to save this as a new note in {name}.")),
+            (false, true, None) => ("No notes match".to_owned(), "Press Enter to save this as a new note.".to_owned()),
+            (true, false, None) => ("Nothing done yet".to_owned(), format!("Mark a note done with {} and it moves here.", self.label(Action::ToggleDone))),
+            (true, true, _) => ("Nothing done matches".to_owned(), String::new()),
         };
         ui.set_empty_title(title.into());
         ui.set_empty_body(body.into());
@@ -901,6 +1040,7 @@ impl App {
             help: l(Action::Help),
             add_reminder: l(Action::AddReminder),
             remove_reminder: l(Action::RemoveReminder),
+            category: l(Action::Category),
             quit: l(Action::Quit),
         });
         let choice = match self.config.theme {
@@ -922,6 +1062,12 @@ impl App {
         ui.set_back_label(if self.listing == View::Archive { "Done" } else { "Notes" }.into());
         ui.set_view(View::Help);
         ui.invoke_focus_help();
+    }
+
+    /// The label of an action's keys with Shift added: Ctrl+T → Ctrl+Shift+T.
+    fn shifted_label(&self, action: Action) -> String {
+        let combo = self.config.combo(action);
+        Combo { shift: true, ..combo }.label()
     }
 
     fn help_rows(&self) -> Vec<HelpRow> {
@@ -949,6 +1095,14 @@ impl App {
                     (l(Action::Inbox), "Notes tab"),
                     (l(Action::Archive), "Done tab"),
                     ("Esc".into(), "Back to typing"),
+                ],
+            ),
+            (
+                "Categories",
+                vec![
+                    ("#name".into(), "Typed in the box: shows only that category, and files the note there"),
+                    (l(Action::Category), "Next category for the selected note, or for what you're typing"),
+                    (self.shifted_label(Action::Category), "Previous category"),
                 ],
             ),
             (
@@ -988,6 +1142,14 @@ impl App {
         }
         rows
     }
+}
+
+/// The category after `current` in the order None, first, second, …, last, None, …
+/// (or before it, for a negative `step`).
+fn step_category(categories: &[Category], current: Option<u64>, step: i32) -> Option<u64> {
+    let here = current.and_then(|id| categories.iter().position(|c| c.id == id)).map_or(0, |i| i + 1) as i32;
+    let next = (here + step).rem_euclid(categories.len() as i32 + 1) as usize;
+    next.checked_sub(1).map(|i| categories[i].id)
 }
 
 /// Centres the window horizontally, a quarter of the way down the screen it's on,

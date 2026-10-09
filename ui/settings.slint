@@ -2,7 +2,7 @@
 // setting a card with an icon, a title, a line of explanation and its control.
 
 import { Theme, Glyph, Icon } from "theme.slint";
-import { Keycap, KeyCombo, KeyHintView, Card, Switch, PushButton } from "widgets.slint";
+import { Keycap, KeyCombo, KeyHintView, Card, Switch, PushButton, IconButton, InputBox } from "widgets.slint";
 import { NavItem, SettingCard, KeyHint } from "types.slint";
 
 component NavButton inherits Rectangle {
@@ -176,8 +176,12 @@ component SettingCardView inherits Rectangle {
     in property <bool> focused;
     in property <bool> recording;
     in property <int> theme-choice;
+    // The name being typed, while `card.editing`.
+    in-out property <string> edit-text;
     callback clicked();
     callback theme-clicked(int);
+    callback swatch-clicked();
+    callback remove-clicked();
 
     if root.card.kind == 5 : Text {
         x: 2px;
@@ -203,7 +207,7 @@ component SettingCardView inherits Rectangle {
             HorizontalLayout {
                 height: 62px;
                 spacing: 14px;
-                VerticalLayout {
+                if root.card.kind != 6 : VerticalLayout {
                     alignment: center;
                     Icon {
                         glyph: root.card.glyph;
@@ -211,15 +215,36 @@ component SettingCardView inherits Rectangle {
                         tint: Theme.text;
                     }
                 }
+                // A category's colour; clicking it tries the next one.
+                if root.card.kind == 6 : VerticalLayout {
+                    alignment: center;
+                    Rectangle {
+                        width: 20px;
+                        height: 20px;
+                        border-radius: 10px;
+                        background: Theme.tag(root.card.tint);
+                        border-width: swatch-touch.has-hover ? 2px : 0px;
+                        border-color: Theme.tag-soft(root.card.tint);
+                        swatch-touch := TouchArea {
+                            mouse-cursor: pointer;
+                            clicked => { root.swatch-clicked(); }
+                        }
+                    }
+                }
                 VerticalLayout {
                     alignment: center;
                     spacing: 2px;
                     horizontal-stretch: 1;
-                    Text {
+                    if !root.card.editing : Text {
                         text: root.card.title;
                         font-size: 14px;
                         color: Theme.text;
                         overflow: elide;
+                    }
+                    if root.card.editing : InputBox {
+                        text <=> root.edit-text;
+                        placeholder: "Name, like Work";
+                        init => { self.take-focus(); }
                     }
                     if root.card.description != "" || root.card.error != "" : Text {
                         text: root.card.error != "" ? root.card.error : root.card.description;
@@ -265,6 +290,14 @@ component SettingCardView inherits Rectangle {
                     color: Theme.text-2;
                     vertical-alignment: center;
                 }
+                if root.card.kind == 6 && !root.card.editing : VerticalLayout {
+                    horizontal-stretch: 0;
+                    alignment: center;
+                    IconButton {
+                        glyph: Glyph.trash;
+                        clicked => { root.remove-clicked(); }
+                    }
+                }
             }
             if root.card.kind == 2 : HorizontalLayout {
                 padding-bottom: 16px;
@@ -299,6 +332,10 @@ export component SettingsWindow inherits Window {
     in property <int> cursor;
     in property <bool> recording;
     in property <bool> cursor-on-shortcut;
+    in property <bool> cursor-on-category;
+    // A category's name is being typed; `edit-text` holds it.
+    in property <bool> editing;
+    in-out property <string> edit-text;
     in property <int> theme-choice;
     in property <string> version;
     in property <string> toast;
@@ -308,6 +345,8 @@ export component SettingsWindow inherits Window {
     callback page-clicked(int);
     callback card-clicked(int);
     callback theme-clicked(int);
+    callback swatch-clicked(int);
+    callback remove-clicked(int);
 
     public function take-focus() {
         router.focus();
@@ -328,10 +367,19 @@ export component SettingsWindow inherits Window {
 
     property <[KeyHint]> hints: root.recording ? [
         { keys: "Esc", label: "Keep the old keys" },
+    ] : root.editing ? [
+        { keys: "Enter", label: "Save" },
+        { keys: "Esc", label: "Cancel" },
     ] : root.nav-active ? [
         { keys: "↑ ↓", label: "Choose a page" },
         { keys: "Enter", label: "Open it" },
         { keys: "Esc", label: "Close" },
+    ] : root.cursor-on-category ? [
+        { keys: "Enter", label: "Rename" },
+        { keys: "← →", label: "Color" },
+        { keys: "Alt+↑ ↓", label: "Move" },
+        { keys: "Del", label: "Remove" },
+        { keys: "Esc", label: "Back" },
     ] : root.cursor-on-shortcut ? [
         { keys: "↑ ↓", label: "Move" },
         { keys: "Enter", label: "Change keys" },
@@ -445,8 +493,11 @@ export component SettingsWindow inherits Window {
                             focused: !root.nav-active && i == root.cursor;
                             recording: root.recording && i == root.cursor;
                             theme-choice: root.theme-choice;
+                            edit-text <=> root.edit-text;
                             clicked => { root.card-clicked(i); }
                             theme-clicked(mode) => { root.theme-clicked(mode); }
+                            swatch-clicked => { root.swatch-clicked(i); }
+                            remove-clicked => { root.remove-clicked(i); }
                         }
                     }
                 }

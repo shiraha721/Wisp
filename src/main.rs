@@ -158,6 +158,15 @@ fn wire_launcher(ui: &AppWindow) {
     ui.on_tab_clicked(|i| {
         with_app(|app| app.tab_clicked(i));
     });
+    ui.on_category_clicked(|i| {
+        with_app(|app| app.category_clicked(i));
+    });
+    ui.on_category_picked(|i| {
+        with_app(|app| app.category_picked(i));
+    });
+    ui.on_category_cycled(|step| {
+        with_app(|app| app.category_cycled(step));
+    });
     ui.on_settings_clicked(|| {
         // After the click is handled, so the launcher can hide cleanly.
         app::later(|app| app.open_settings());
@@ -207,6 +216,12 @@ fn wire_settings(settings: &SettingsWindow) {
     });
     settings.on_theme_clicked(|mode| {
         with_app(|app| app.theme_clicked(mode));
+    });
+    settings.on_swatch_clicked(|i| {
+        with_app(|app| app.swatch_clicked(i));
+    });
+    settings.on_remove_clicked(|i| {
+        with_app(|app| app.remove_clicked(i));
     });
     settings.window().on_close_requested(|| {
         app::later(|app| app.settings_closed());

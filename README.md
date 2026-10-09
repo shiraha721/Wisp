@@ -10,29 +10,39 @@ about 25 MB of memory while it waits, and no GPU required.
 ## What it does
 
 - **One key from anywhere.** `Ctrl+Alt+Shift+N` (⌘⌥⇧N on macOS) opens Wisp with
-  the cursor already in the input. Press it again, or `Esc`, to hide it. The
-  window also hides when you click elsewhere (you can turn that off).
-- **Type and go.** `Enter` saves the note. `Shift+Enter` adds a line. What you
-  type also filters your notes, so related ones show up as you write.
-- **Dates and reminders.** `Ctrl+Enter` saves and opens the note's details, where
-  you can type a start and a due time in plain words ("tomorrow 9am", "fri 17:00",
-  "+30m", "明天下午3点") and add reminders:
+  the cursor already in the input, like Flow Launcher. Press it again, or `Esc`,
+  to hide it. The window also hides when you click elsewhere (you can turn that off).
+- **Type and go.** `Enter` saves the note. `Shift+Enter` adds a line: the first
+  line becomes the title, the rest its notes. What you type also filters your
+  notes, so related ones show up as you write.
+- **Notes, dates and reminders.** `Ctrl+Enter` saves and opens the note, with a
+  multi-line **Notes** field, a start and a due time typed in plain words
+  ("tomorrow 9am", "fri 17:00", "+30m", "明天下午3点") and reminders:
   - at the start, *N* minutes before or after the start
   - *N* minutes before the due time, or at the due time
   - every day from the start until the note is done (at the start's time of day
     or a time you pick)
-- **Done means archived.** `Ctrl+D` marks a note done and moves it to the archive
+
+  Reminders follow the start or due time, so they can be added once one is set.
+  `Delete` on a reminder (or `Ctrl+Shift+R` anywhere in the note) removes it.
+  `Esc` always gets you out: anything that can't be saved is explained, and a
+  second `Esc` saves the rest.
+- **Done means archived.** `Ctrl+D` marks a note done and moves it to the Done tab
   (`Ctrl+2`). Nothing is deleted unless you ask, and `Ctrl+Z` undoes the last
   change.
-- **Lives in the tray** and starts with the computer (switchable in Settings).
-- **Every action has a key**, and every shortcut can be changed in Settings
-  (`Ctrl+,`): select a row, press `Enter`, press the new combination. Any
-  combination of Ctrl, Alt, Shift and Super/Win/⌘ works; clashes are caught.
+- **Lives in the tray** and starts with the computer.
+- **Settings in their own window** (the gear button, `Ctrl+,`, the tray menu, or
+  `wisp --settings`), organised into General, Hotkeys, Appearance and About.
+  Every shortcut can be changed there: select it, press `Enter`, press the new
+  combination. Any combination of Ctrl, Alt, Shift and Super/Win/⌘ works; clashes
+  are caught.
 - Light and dark themes, following the system by default.
 
-| Editing a note | Dark |
+| Editing a note | Settings |
 | --- | --- |
-| ![Editor](docs/editor.png) | ![Dark](docs/dark.png) |
+| ![Editor](docs/editor.png) | ![Settings](docs/settings.png) |
+
+![Dark](docs/dark.png)
 
 ## Keys
 
@@ -41,19 +51,24 @@ Press `F1` in the app for the full list, which shows your own shortcuts.
 | Where | Key | Does |
 | --- | --- | --- |
 | Anywhere | `Ctrl+Alt+Shift+N` | Open or hide Wisp |
-| Writing | `Enter` / `Shift+Enter` | Save the note / new line |
+| Writing | `Enter` / `Shift+Enter` | Save the note / new line (later lines become notes) |
 | | `Ctrl+Enter` | Save, then add dates and reminders |
 | | `Esc` | Hide (the text you typed stays for next time) |
 | Your notes | `↓` `↑` `Tab` | Move through the list (`Esc` returns to typing) |
 | | `Enter` or `Ctrl+E` | Open the selected note |
-| | `Ctrl+D` | Mark done, or bring back from the archive |
+| | `Ctrl+D` | Mark done, or bring back from Done |
 | | `Ctrl+Delete` | Delete |
 | | `Ctrl+Z` | Undo |
-| | `Ctrl+1` / `Ctrl+2` | Open notes / done notes |
-| Editing | `Tab` / `Shift+Tab` | Next / previous field |
-| | `Esc`, or `Enter` in a date field | Save and close |
+| | `Ctrl+1` / `Ctrl+2` | Notes tab / Done tab |
+| Editing | `Enter` in the title | Go to the notes |
+| | `Tab` / `Shift+Tab` | Next / previous field |
+| | `Esc`, or `Enter` in a date field | Save and close (`Esc` again saves what's valid) |
 | | `Ctrl+R` | Add a reminder |
-| | `←` `→` on a reminder | Change its type (`Delete` removes it) |
+| | `←` `→` / `Delete` on a reminder | Change its type / remove it |
+| | `Ctrl+Shift+R` | Remove the reminder you're on, or the last one |
+| Settings | `↑` `↓`, `Enter`, `←` `→` | Move, change, flip switches and pick the theme |
+| | `Backspace` on a shortcut | Restore its default |
+| | `Tab` / `Esc` | Back to the page list (`Esc` there closes) |
 | Wisp | `Ctrl+,` / `F1` / `Ctrl+Q` | Settings / shortcuts / quit |
 
 On macOS, `Ctrl` in this table is ⌘.
@@ -87,10 +102,11 @@ The first start of a release build registers Wisp to start with the computer
 ### Command line
 
 ```
-wisp            open Wisp, starting it if needed
-wisp --hidden   start in the tray without opening the window
-wisp --toggle   open or hide the running Wisp
-wisp --quit     quit the running Wisp
+wisp              open Wisp, starting it if needed
+wisp --hidden     start in the tray without opening the window
+wisp --toggle     open or hide the running Wisp
+wisp --settings   open the settings window
+wisp --quit       quit the running Wisp
 ```
 
 Only one Wisp runs per data folder; later launches pass their command to it.
@@ -106,7 +122,9 @@ Two JSON files, written atomically on every change:
 | Linux | `~/.local/share/Wisp/` |
 
 `notes.json` holds the notes and `settings.json` the settings. If `notes.json`
-can't be read, it's moved aside (never overwritten) and Wisp says so.
+can't be read, it's moved aside (never overwritten) and Wisp says so. Files from
+before notes had their own field are converted when loaded: everything after
+a note's first line becomes its notes.
 
 **Portable mode:** create a folder named `wisp-data` next to the executable and
 everything is stored there instead (start-with-computer stays off). The
@@ -114,6 +132,9 @@ everything is stored there instead (start-with-computer stays off). The
 
 ## Platform notes
 
+- **Windows**: the launcher has no taskbar button; on Windows 11 it gets rounded
+  corners and a shadow. Shortcuts also work while a Chinese or Japanese input
+  method is active (full-width punctuation such as `，` counts as `,`).
 - **Linux, X11**: everything works as described.
 - **Linux, Wayland**: Wisp runs through XWayland. Wayland doesn't let apps grab
   keys system-wide, so the summon key only works while an X11 window has focus.
@@ -130,10 +151,16 @@ everything is stored there instead (start-with-computer stays off). The
 ## Project layout
 
 ```
-ui/app.slint      the whole UI: list, editor, settings, help, tray menu
-src/main.rs       start-up: single instance, hotkey, tray, timers
-src/app.rs        the controller: keys, list, editor, settings, undo, reminders
-src/model.rs      notes, reminder rules and the JSON store
+ui/app.slint          what Rust sees, and the tray menu
+ui/launcher.slint     the launcher: notes list, editor, shortcut list
+ui/settings.slint     the settings window
+ui/theme.slint        colours, sizes and the icon set
+ui/widgets.slint      shared pieces: keycaps, tiles, cards, inputs, switches
+src/main.rs           start-up: single instance, hotkey, tray, timers
+src/app.rs            the controller: windows, keys, list, undo, reminders
+src/app/editor.rs     the note editor
+src/app/settings.rs   the settings window's pages and keys
+src/model.rs          notes, reminder rules and the JSON store
 src/dates.rs      date/time parsing and labels
 src/shortcuts.rs  key combinations ↔ text ↔ system hotkeys
 src/config.rs     settings and default shortcuts

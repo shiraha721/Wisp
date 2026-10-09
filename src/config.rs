@@ -23,6 +23,7 @@ pub enum Action {
     Settings,
     Help,
     AddReminder,
+    RemoveReminder,
     Quit,
 }
 
@@ -34,17 +35,78 @@ pub struct ActionInfo {
 }
 
 pub const ACTIONS: &[ActionInfo] = &[
-    ActionInfo { action: Action::Schedule, id: "schedule", label: "Save and add dates", default: "Ctrl+Enter" },
-    ActionInfo { action: Action::Open, id: "open", label: "Open the selected note", default: "Ctrl+E" },
-    ActionInfo { action: Action::ToggleDone, id: "toggle_done", label: "Mark done / bring back", default: "Ctrl+D" },
-    ActionInfo { action: Action::Delete, id: "delete", label: "Delete", default: "Ctrl+Delete" },
-    ActionInfo { action: Action::Undo, id: "undo", label: "Undo", default: "Ctrl+Z" },
-    ActionInfo { action: Action::Inbox, id: "inbox", label: "Show notes", default: "Ctrl+1" },
-    ActionInfo { action: Action::Archive, id: "archive", label: "Show done", default: "Ctrl+2" },
-    ActionInfo { action: Action::Settings, id: "settings", label: "Settings", default: "Ctrl+," },
-    ActionInfo { action: Action::Help, id: "help", label: "Keyboard shortcuts", default: "F1" },
-    ActionInfo { action: Action::AddReminder, id: "add_reminder", label: "Add a reminder", default: "Ctrl+R" },
-    ActionInfo { action: Action::Quit, id: "quit", label: "Quit Wisp", default: "Ctrl+Q" },
+    ActionInfo {
+        action: Action::Schedule,
+        id: "schedule",
+        label: "Save and add dates",
+        default: "Ctrl+Enter",
+    },
+    ActionInfo {
+        action: Action::Open,
+        id: "open",
+        label: "Open the selected note",
+        default: "Ctrl+E",
+    },
+    ActionInfo {
+        action: Action::ToggleDone,
+        id: "toggle_done",
+        label: "Mark done / bring back",
+        default: "Ctrl+D",
+    },
+    ActionInfo {
+        action: Action::Delete,
+        id: "delete",
+        label: "Delete",
+        default: "Ctrl+Delete",
+    },
+    ActionInfo {
+        action: Action::Undo,
+        id: "undo",
+        label: "Undo",
+        default: "Ctrl+Z",
+    },
+    ActionInfo {
+        action: Action::AddReminder,
+        id: "add_reminder",
+        label: "Add a reminder",
+        default: "Ctrl+R",
+    },
+    ActionInfo {
+        action: Action::RemoveReminder,
+        id: "remove_reminder",
+        label: "Remove a reminder",
+        default: "Ctrl+Shift+R",
+    },
+    ActionInfo {
+        action: Action::Inbox,
+        id: "inbox",
+        label: "Show notes",
+        default: "Ctrl+1",
+    },
+    ActionInfo {
+        action: Action::Archive,
+        id: "archive",
+        label: "Show done",
+        default: "Ctrl+2",
+    },
+    ActionInfo {
+        action: Action::Help,
+        id: "help",
+        label: "Keyboard shortcuts",
+        default: "F1",
+    },
+    ActionInfo {
+        action: Action::Settings,
+        id: "settings",
+        label: "Open settings",
+        default: "Ctrl+,",
+    },
+    ActionInfo {
+        action: Action::Quit,
+        id: "quit",
+        label: "Quit Wisp",
+        default: "Ctrl+Q",
+    },
 ];
 
 pub fn action_info(action: Action) -> &'static ActionInfo {

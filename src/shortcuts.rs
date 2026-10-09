@@ -211,6 +211,8 @@ fn key_from_char(c: char, shift: bool) -> Option<String> {
         '\u{F704}'..='\u{F71B}' => return Some(format!("F{}", c as u32 - 0xF704 + 1)),
         c if c.is_control() || ('\u{E000}'..='\u{F8FF}').contains(&c) => return None,
         c => {
+            // Chinese and Japanese input methods turn punctuation into full-width forms.
+            let c = narrow(c);
             // With Shift held, the event carries the shifted symbol ("<" for ","); store
             // the key itself so "Ctrl+Shift+," matches and maps to a physical key.
             let c = if shift { unshift(c) } else { c };
@@ -218,6 +220,25 @@ fn key_from_char(c: char, shift: bool) -> Option<String> {
         }
     };
     Some(named.to_owned())
+}
+
+/// Full-width and CJK punctuation → the ASCII key that typed it ("，" → ",").
+fn narrow(c: char) -> char {
+    match c {
+        '\u{FF01}'..='\u{FF5E}' => char::from_u32(c as u32 - 0xFEE0).unwrap_or(c),
+        '\u{3000}' => ' ',
+        '。' => '.',
+        '、' => '\\',
+        '【' | '「' => '[',
+        '】' | '」' => ']',
+        '·' => '`',
+        '《' => '<',
+        '》' => '>',
+        '‘' | '’' => '\'',
+        '“' | '”' => '"',
+        '￥' => '$',
+        c => c,
+    }
 }
 
 /// US-layout shifted symbol → its key.
@@ -289,6 +310,10 @@ mod tests {
         assert_eq!(Combo::from_event("\u{F701}", false, true, false, false), Some(c("Alt+Down")));
         assert_eq!(Combo::from_event("\u{11}", true, false, false, false), None, "lone modifier");
         assert_eq!(Combo::from_event("你好", false, false, false, false), None);
+        // Chinese input methods send full-width punctuation.
+        assert_eq!(Combo::from_event("，", true, false, false, false), Some(c("Ctrl+,")));
+        assert_eq!(Combo::from_event("《", true, false, true, false), Some(c("Ctrl+Shift+,")));
+        assert_eq!(Combo::from_event("、", true, false, false, false), Some(c("Ctrl+\\")));
     }
 
     #[test]

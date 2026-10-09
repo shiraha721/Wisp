@@ -169,7 +169,11 @@ impl Reminder {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Item {
     pub id: u64,
+    /// The one-line title.
     pub text: String,
+    /// Details: any number of lines.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub notes: String,
     /// Unix seconds.
     pub created: i64,
     #[serde(default)]
@@ -202,8 +206,17 @@ impl Item {
         self.text.lines().map(str::trim).find(|l| !l.is_empty()).unwrap_or("")
     }
 
-    pub fn has_more_lines(&self) -> bool {
-        self.text.trim().lines().filter(|l| !l.trim().is_empty()).count() > 1
+    pub fn has_notes(&self) -> bool {
+        !self.notes.trim().is_empty()
+    }
+
+    /// The first line of the notes, for the list.
+    pub fn notes_preview(&self) -> &str {
+        self.notes.lines().map(str::trim).find(|l| !l.is_empty()).unwrap_or("")
+    }
+
+    pub fn matches(&self, query: &str) -> bool {
+        matches_query(&format!("{}\n{}", self.text, self.notes), query)
     }
 
     pub fn is_overdue(&self, now: i64) -> bool {
@@ -274,6 +287,9 @@ where
             lines.push(format!("{verb} {} ({})", dates::day_label(&t, now), dates::relative(delta)));
         }
     }
+    if item.has_notes() {
+        lines.push(item.notes_preview().to_owned());
+    }
     lines.join("\n")
 }
 
@@ -314,6 +330,12 @@ impl Store {
             }
         };
         let mut store = Store { path: path.to_owned(), data };
+        // Before notes had their own field, everything after the first line was the notes.
+        for item in &mut store.data.items {
+            if item.notes.is_empty() && item.text.trim().contains('\n') {
+                (item.text, item.notes) = split_title(&item.text);
+            }
+        }
         let max_id = store.data.items.iter().map(|i| i.id).max().unwrap_or(0);
         store.data.next_id = store.data.next_id.max(max_id + 1);
         (store, warning)
@@ -330,12 +352,13 @@ impl Store {
         std::fs::rename(&tmp, &self.path).map_err(|e| format!("{}: {e}", self.path.display()))
     }
 
-    pub fn add(&mut self, text: &str, now: i64) -> u64 {
+    pub fn add(&mut self, text: &str, notes: &str, now: i64) -> u64 {
         let id = self.data.next_id.max(1);
         self.data.next_id = id + 1;
         self.data.items.push(Item {
             id,
             text: text.to_owned(),
+            notes: notes.to_owned(),
             created: now,
             updated: now,
             start: None,
@@ -373,6 +396,16 @@ impl Store {
     }
 }
 
+/// Splits typed text into a one-line title and notes (everything after the first line).
+pub fn split_title(text: &str) -> (String, String) {
+    let text = text.replace("\r\n", "\n");
+    let text = text.trim();
+    match text.split_once('\n') {
+        Some((first, rest)) => (first.trim().to_owned(), rest.trim().to_owned()),
+        None => (text.to_owned(), String::new()),
+    }
+}
+
 /// Space-separated words that must all appear (case-insensitively) in the text.
 pub fn matches_query(text: &str, query: &str) -> bool {
     let haystack = text.to_lowercase();
@@ -393,7 +426,8 @@ mod tests {
     fn item(start: Option<i64>, due: Option<i64>, rules: &[Rule]) -> Item {
         Item {
             id: 1,
-            text: "Write report\nwith charts".into(),
+            text: "Write report".into(),
+            notes: "with charts".into(),
             created: 0,
             updated: 0,
             start,
@@ -479,9 +513,12 @@ mod tests {
     fn titles_and_queries() {
         let it = item(None, None, &[]);
         assert_eq!(it.title(), "Write report");
-        assert!(it.has_more_lines());
-        assert!(matches_query(&it.text, "CHARTS report"));
-        assert!(!matches_query(&it.text, "report slides"));
+        assert!(it.has_notes());
+        assert_eq!(it.notes_preview(), "with charts");
+        assert!(it.matches("CHARTS report"), "notes are searched too");
+        assert!(!it.matches("report slides"));
+        assert_eq!(split_title("  Plan trip\r\nbook train\npack light \n"), ("Plan trip".into(), "book train\npack light".into()));
+        assert_eq!(split_title("one line"), ("one line".into(), String::new()));
     }
 
     #[test]
@@ -491,12 +528,17 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
         let (mut store, warn) = Store::load(&path);
         assert!(warn.is_none());
-        let id = store.add("hello", 5);
+        let id = store.add("hello", "", 5);
         store.get_mut(id).unwrap().reminders.push(Reminder::new(Rule::BeforeDue { minutes: 10 }));
         store.save().unwrap();
         let (again, _) = Store::load(&path);
         assert_eq!(again.data.items, store.data.items);
         assert!(again.data.next_id > id);
+
+        // Old files kept the notes in the text after the first line.
+        std::fs::write(&path, r#"{"items":[{"id":7,"text":"Plan trip\nbook train","created":1}]}"#).unwrap();
+        let (old, _) = Store::load(&path);
+        assert_eq!((old.data.items[0].text.as_str(), old.data.items[0].notes.as_str()), ("Plan trip", "book train"));
 
         std::fs::write(&path, "{ not json").unwrap();
         let (fresh, warn) = Store::load(&path);

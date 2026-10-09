@@ -463,6 +463,12 @@ impl App {
                 self.close_editor();
             }
             Action::AddReminder => self.add_reminder(),
+            Action::RemoveReminder => {
+                let last = self.reminders.row_count() as i32 - 1;
+                if last >= 0 {
+                    self.reminder_remove(last);
+                }
+            }
             Action::ToggleDone => {
                 if let Some(id) = self.editor.as_ref().map(|e| e.id) {
                     if self.close_editor() {
@@ -597,7 +603,8 @@ impl App {
         if text.is_empty() {
             return;
         }
-        let id = self.store.add(&text, Self::now().timestamp());
+        let (title, notes) = model::split_title(&text);
+        let id = self.store.add(&title, &notes, Self::now().timestamp());
         self.remember(UndoStep::Created(id));
         self.persist();
         ui.set_query(SharedString::new());
@@ -658,7 +665,7 @@ impl App {
                     // Put the words back where they were typed.
                     let ui = self.ui();
                     if ui.get_query().trim().is_empty() {
-                        ui.set_query(item.text.into());
+                        ui.set_query(join_title(&item.text, &item.notes).into());
                     }
                 }
                 self.toast("Unsaved. The text is back in the box.", false);
@@ -703,7 +710,7 @@ impl App {
         let open_count = self.store.data.items.iter().filter(|i| !i.is_done()).count();
         let done_count = self.store.data.items.len() - open_count;
         let mut items: Vec<&Item> =
-            self.store.data.items.iter().filter(|i| i.is_done() == archive && model::matches_query(&i.text, &query)).collect();
+            self.store.data.items.iter().filter(|i| i.is_done() == archive && i.matches(&query)).collect();
 
         let mut sections: Vec<String> = Vec::new();
         if archive {
@@ -751,7 +758,7 @@ impl App {
             rows.push(ItemRow {
                 id: item.id as i32,
                 title: item.title().into(),
-                more: item.has_more_lines(),
+                more: item.has_notes(),
                 section: section.as_str().into(),
                 start: start.into(),
                 due: due.into(),
@@ -864,7 +871,7 @@ impl App {
         let now = Self::now();
         let at = |t: i64| Local.timestamp_opt(t, 0).single().map(|t| dates::canonical(&t)).unwrap_or_default();
 
-        ui.set_edit_text(item.text.as_str().into());
+        ui.set_edit_text(join_title(&item.text, &item.notes).into());
         ui.set_edit_start(item.start.map(at).unwrap_or_default().into());
         ui.set_edit_due(item.due.map(at).unwrap_or_default().into());
         let written = Local.timestamp_opt(item.created, 0).single().unwrap_or(now);
@@ -1053,14 +1060,15 @@ impl App {
 
         let id = session.id;
         let before = session.before.clone();
-        let text = ui.get_edit_text().trim().to_owned();
+        let (text, notes) = model::split_title(&ui.get_edit_text());
         self.editor = None;
-        if text.is_empty() {
+        if text.is_empty() && notes.is_empty() {
             self.delete(id);
             return Ok(());
         }
         let Some(mut item) = self.store.get(id).cloned() else { return Ok(()) };
         item.text = text;
+        item.notes = notes;
         item.start = start;
         item.due = due;
         // Keep the firing history of rules that didn't change.
@@ -1074,7 +1082,7 @@ impl App {
                 }
             }
         }
-        let changed = item.text != before.text || item.start != before.start || item.due != before.due || item.reminders.iter().map(|r| r.rule).ne(before.reminders.iter().map(|r| r.rule));
+        let changed = item.text != before.text || item.notes != before.notes || item.start != before.start || item.due != before.due || item.reminders.iter().map(|r| r.rule).ne(before.reminders.iter().map(|r| r.rule));
         if changed {
             item.updated = now;
             self.remember(UndoStep::Changed(before));
@@ -1459,6 +1467,7 @@ impl App {
                     ("Tab".into(), "Next field"),
                     ("Esc".into(), "Save and close"),
                     (l(Action::AddReminder), "Add a reminder"),
+                    (l(Action::RemoveReminder), "Remove a reminder"),
                     ("← →".into(), "Change the reminder type"),
                     ("Delete".into(), "Remove the reminder"),
                 ],
@@ -1509,6 +1518,11 @@ fn place_and_focus(ui: &AppWindow) -> bool {
 /// Wayland sessions only deliver grabbed keys while an X11 window has focus.
 fn on_wayland() -> bool {
     cfg!(target_os = "linux") && std::env::var("XDG_SESSION_TYPE").is_ok_and(|t| t.eq_ignore_ascii_case("wayland"))
+}
+
+/// Title and notes as one block of text: the title on the first line.
+fn join_title(title: &str, notes: &str) -> String {
+    if notes.is_empty() { title.to_owned() } else { format!("{title}\n{notes}") }
 }
 
 /// "Tomorrow 09:00" → "tomorrow 09:00", for use after a verb.

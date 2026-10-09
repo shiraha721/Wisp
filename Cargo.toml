@@ -1,0 +1,36 @@
+[package]
+name = "wisp"
+version = "0.1.0"
+edition = "2021"
+description = "A tiny keyboard-first catcher for ideas, memos and to-dos"
+license = "MIT"
+
+[dependencies]
+# The software renderer: no GPU driver needed, and about a quarter of the memory of
+# the OpenGL one (~24 MB vs ~90 MB measured), which matters for an app that idles all day.
+slint = { version = "1.18", default-features = false, features = ["std", "compat-1-2", "renderer-software", "software-renderer-path", "system-tray", "unstable-winit-030"] }
+global-hotkey = "0.8"
+notify-rust = "4"
+auto-launch = "0.6"
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+dirs = "7"
+
+# On Linux only the X11 flavour of winit is built: a launcher needs to position and
+# focus its own window and grab a global key, none of which Wayland clients may do.
+# Wayland sessions run it through XWayland (see README for the --toggle fallback).
+[target.'cfg(target_os = "linux")'.dependencies]
+slint = { version = "1.18", default-features = false, features = ["backend-winit-x11"] }
+
+[target.'cfg(not(target_os = "linux"))'.dependencies]
+slint = { version = "1.18", default-features = false, features = ["backend-winit"] }
+
+[build-dependencies]
+slint-build = "1.18"
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+strip = true

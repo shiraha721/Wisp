@@ -699,6 +699,186 @@ mod tests {
         assert_eq!(p("下周"), "2026-10-15 09:00");
     }
 
+    /// Parses `input` with Wisp shown in `language`.
+    fn in_lang(language: &str, input: &str) -> String {
+        crate::i18n::set_current(crate::i18n::resolve(language));
+        let read = p(input);
+        crate::i18n::set_current(0);
+        read
+    }
+
+    #[test]
+    fn dates_in_every_language() {
+        let cases: &[(&str, &[(&str, &str)])] = &[
+            ("fr", &[
+                ("demain 9h", "2026-10-09 09:00"),
+                ("vendredi 17h", "2026-10-09 17:00"),
+                ("lundi prochain", "2026-10-12 09:00"),
+                ("dans 2 heures", "2026-10-08 12:16"),
+                ("dans 2h", "2026-10-08 12:16"),
+                ("20/10 14h30", "2026-10-20 14:30"),
+                ("le 20 octobre à 14 heures", "2026-10-20 14:00"),
+                ("ce soir", "2026-10-08 20:00"),
+                ("après-demain à 10h", "2026-10-10 10:00"),
+                ("demain à 3h de l’après-midi", "2026-10-09 15:00"),
+                ("le 1er", "2026-11-01 09:00"),
+            ]),
+            ("de", &[
+                ("morgen 9 Uhr", "2026-10-09 09:00"),
+                ("Fr 17:00", "2026-10-09 17:00"),
+                ("nächsten Montag", "2026-10-12 09:00"),
+                ("in 2 Stunden", "2026-10-08 12:16"),
+                ("in einer Stunde", "2026-10-08 11:16"),
+                ("20.10. 14:30", "2026-10-20 14:30"),
+                ("übermorgen um 10", "2026-10-10 10:00"),
+                ("heute Abend", "2026-10-08 20:00"),
+                ("am 20. Oktober", "2026-10-20 09:00"),
+                ("14.30", "2026-10-08 14:30"),
+            ]),
+            ("es", &[
+                ("mañana a las 9", "2026-10-09 09:00"),
+                ("viernes 17:00", "2026-10-09 17:00"),
+                ("el próximo lunes", "2026-10-12 09:00"),
+                ("el lunes que viene", "2026-10-12 09:00"),
+                ("en 2 horas", "2026-10-08 12:16"),
+                ("20/10 14:00", "2026-10-20 14:00"),
+                ("pasado mañana a las 10", "2026-10-10 10:00"),
+                ("el 20 de octubre", "2026-10-20 09:00"),
+                ("mañana a las 3 de la tarde", "2026-10-09 15:00"),
+                ("esta noche", "2026-10-08 20:00"),
+            ]),
+            ("pt_BR", &[
+                ("amanhã às 9h", "2026-10-09 09:00"),
+                ("sexta 17h", "2026-10-09 17:00"),
+                ("próxima segunda", "2026-10-12 09:00"),
+                ("segunda que vem", "2026-10-12 09:00"),
+                ("em 2 horas", "2026-10-08 12:16"),
+                ("daqui a 30 minutos", "2026-10-08 10:46"),
+                ("20/10 14h30", "2026-10-20 14:30"),
+                ("depois de amanhã às 10h", "2026-10-10 10:00"),
+                ("20 de outubro", "2026-10-20 09:00"),
+            ]),
+            ("it", &[
+                ("domani alle 9", "2026-10-09 09:00"),
+                ("venerdì 17:00", "2026-10-09 17:00"),
+                ("lunedì prossimo", "2026-10-12 09:00"),
+                ("tra 2 ore", "2026-10-08 12:16"),
+                ("fra un'ora", "2026-10-08 11:16"),
+                ("20/10 14:00", "2026-10-20 14:00"),
+                ("dopodomani alle 10", "2026-10-10 10:00"),
+                ("20 ottobre", "2026-10-20 09:00"),
+                ("stasera", "2026-10-08 20:00"),
+            ]),
+            ("ru", &[
+                ("завтра в 9:00", "2026-10-09 09:00"),
+                ("в пятницу в 17:00", "2026-10-09 17:00"),
+                ("в следующий понедельник", "2026-10-12 09:00"),
+                ("через 2 часа", "2026-10-08 12:16"),
+                ("через 30 минут", "2026-10-08 10:46"),
+                ("через неделю", "2026-10-15 10:16"),
+                ("20.10 14:00", "2026-10-20 14:00"),
+                ("послезавтра в 10", "2026-10-10 10:00"),
+                ("20 октября", "2026-10-20 09:00"),
+                ("сегодня вечером", "2026-10-08 20:00"),
+                ("в 3 часа дня", "2026-10-08 15:00"),
+            ]),
+            ("ja", &[
+                ("明日 9時", "2026-10-09 09:00"),
+                ("金曜日 17:00", "2026-10-09 17:00"),
+                ("来週月曜日", "2026-10-12 09:00"),
+                ("2時間後", "2026-10-08 12:16"),
+                ("30分後", "2026-10-08 10:46"),
+                ("10月20日 14時30分", "2026-10-20 14:30"),
+                ("明後日 午前10時", "2026-10-10 10:00"),
+                ("今夜", "2026-10-08 20:00"),
+                ("明日の午後3時半", "2026-10-09 15:30"),
+            ]),
+            ("ko", &[
+                ("내일 오전 9시", "2026-10-09 09:00"),
+                ("금요일 17:00", "2026-10-09 17:00"),
+                ("다음 주 월요일", "2026-10-12 09:00"),
+                ("2시간 후", "2026-10-08 12:16"),
+                ("30분 후", "2026-10-08 10:46"),
+                ("10월 20일 오후 2시 30분", "2026-10-20 14:30"),
+                ("모레 오전 10시", "2026-10-10 10:00"),
+                ("오늘 밤", "2026-10-08 20:00"),
+            ]),
+            ("zh_TW", &[
+                ("明天下午3點", "2026-10-09 15:00"),
+                ("下週一 9:00", "2026-10-12 09:00"),
+                ("後天上午10點半", "2026-10-10 10:30"),
+                ("30分鐘後", "2026-10-08 10:46"),
+                ("週五晚上8點", "2026-10-09 20:00"),
+            ]),
+            ("eo", &[
+                ("morgaŭ je la 9a", "2026-10-09 09:00"),
+                ("morgaux je 9:00", "2026-10-09 09:00"),
+                ("vendredon 17:00", "2026-10-09 17:00"),
+                ("venontan lundon", "2026-10-12 09:00"),
+                ("post 2 horoj", "2026-10-08 12:16"),
+                ("20/10 14:00", "2026-10-20 14:00"),
+                ("postmorgaŭ je la 10a", "2026-10-10 10:00"),
+                ("la 20-an de oktobro", "2026-10-20 09:00"),
+                ("ĉi-vespere", "2026-10-08 20:00"),
+            ]),
+        ];
+        for (language, examples) in cases {
+            for (input, expected) in *examples {
+                assert_eq!(in_lang(language, input), *expected, "{language}: {input}");
+            }
+            // English always works.
+            assert_eq!(in_lang(language, "tomorrow 9am"), "2026-10-09 09:00", "{language}");
+        }
+        // Chinese, Japanese, Korean and Russian work whatever Wisp is shown in;
+        // other languages' words only in their own.
+        assert_eq!(p("明天 9時"), "2026-10-09 09:00");
+        assert_eq!(p("через 2 часа"), "2026-10-08 12:16");
+        assert!(p("demain 9h").starts_with("err"));
+        assert_eq!(p("10/12"), "2026-10-12 09:00", "month first in English");
+        assert_eq!(in_lang("fr", "10/12"), "2026-12-10 09:00", "day first in French");
+    }
+
+    #[test]
+    fn amounts_and_clocks_in_other_languages() {
+        let amount = |language: &str, input: &str| {
+            crate::i18n::set_current(crate::i18n::resolve(language));
+            let read = parse_minutes(input);
+            crate::i18n::set_current(0);
+            read
+        };
+        assert_eq!(amount("ru", "2 часа"), Some(120));
+        assert_eq!(amount("de", "15 Min"), Some(15));
+        assert_eq!(amount("fr", "1 jour"), Some(1440));
+        assert_eq!(amount("ja", "2時間"), Some(120));
+        assert_eq!(amount("ko", "15분"), Some(15));
+        assert_eq!(amount("pt_BR", "1 dia"), Some(1440));
+        assert_eq!(amount("en", "2小时"), Some(120));
+        crate::i18n::set_current(crate::i18n::resolve("fr"));
+        assert_eq!(parse_clock("15h"), Some(hm(15, 0)));
+        crate::i18n::set_current(crate::i18n::resolve("de"));
+        assert_eq!(parse_clock("15 Uhr"), Some(hm(15, 0)));
+        crate::i18n::set_current(0);
+        assert_eq!(parse_clock("午後3時"), Some(hm(15, 0)));
+        assert_eq!(parse_clock("오후 3시"), Some(hm(15, 0)));
+    }
+
+    #[test]
+    fn labels_in_other_languages() {
+        let n = now();
+        let at = |d, h, m| tz().with_ymd_and_hms(2026, 10, d, h, m, 0).unwrap();
+        crate::i18n::set_current(crate::i18n::resolve("de"));
+        assert_eq!(day_label(&at(20, 9, 0), &n), "20. Okt. 09:00");
+        assert_eq!(relative(-3 * 86400), "vor 3 Tagen");
+        crate::i18n::set_current(crate::i18n::resolve("ja"));
+        assert_eq!(day_label(&at(12, 9, 0), &n), "月曜日 09:00");
+        assert_eq!(header_date(&n), "10月8日(木)");
+        crate::i18n::set_current(crate::i18n::resolve("ru"));
+        assert_eq!(relative(5 * 86400), "через 5 дней");
+        assert_eq!(relative(2 * 86400), "через 2 дня");
+        crate::i18n::set_current(0);
+        assert_eq!(header_date(&n), "Thu, Oct 8");
+    }
+
     #[test]
     fn errors_are_reported() {
         assert!(p("someday").starts_with("err"));

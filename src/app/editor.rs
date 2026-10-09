@@ -70,13 +70,15 @@ impl App {
         self.reminders.set_vec(rows);
         ui.set_focused_reminder(-1);
 
+        // A note that already has a date keeps the reminders it has, even none.
+        let dated = item.start.is_some() || item.due.is_some();
         self.editor = Some(EditSession {
             id,
             category: item.category,
             before: item,
             kinds,
             return_to: self.listing,
-            auto_reminder_done: false,
+            auto_reminder_done: dated,
             escape_armed: false,
         });
         self.update_editor();
@@ -132,7 +134,7 @@ impl App {
         ui.set_can_add_reminder(start.is_some() || due.is_some());
         let Some(session) = self.editor.as_mut() else { return };
 
-        // The first date gets a reminder to go with it, once per visit.
+        // A note's first date gets a reminder to go with it.
         if !session.auto_reminder_done && session.kinds.is_empty() && (start.is_some() || due.is_some()) {
             session.auto_reminder_done = true;
             let rule = if start.is_some() { Rule::AtStart } else { Rule::BeforeDue { minutes: 60 } };

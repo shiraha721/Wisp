@@ -31,6 +31,15 @@ itself to the programs that start with Windows, and waits in the system tray.
 and start it. Notes go to `~/Library/Application Support/Wisp` or
 `~/.local/share/Wisp`, unless you put a `data` folder next to the program.
 
+**The first start.** Wisp first asks two things: the language to show it in,
+and the key that opens it. English is selected, and your system's language is
+marked "System". Choosing a language switches to it right away. To use another
+key than `Alt+N`, move to the key card (`Enter`) and press the combination you
+want; `Backspace` goes back to `Alt+N`. Then press **Start using Wisp**, or
+`Enter` until you're there. Both can be changed later in Settings.
+
+![The first start](images/welcome.png)
+
 **Opening Wisp.** Press `Alt+N` from any app (⌃⌥N on macOS). The window opens
 near the top of the screen with the cursor in the box, ready to type. Press
 `Alt+N` again, or `Esc`, to hide it. It also hides when you click somewhere else;
@@ -237,8 +246,9 @@ you which one.
 
 Wisp speaks English, German, Spanish, Esperanto, French, Italian, Portuguese
 (Brazil), Russian, Japanese, Korean, and Chinese (Simplified and Traditional).
-English is the default; Settings → Language switches right away. "Match system"
-follows your system's language when Wisp has it, and English otherwise.
+English is the default. The first start asks which one you want, and
+Settings → Language switches any time. "Match system" follows your system's
+language when Wisp has it, and English otherwise.
 
 The language also decides how dates are shown ("Fr, 9. Okt.", "10月9日(金)")
 and which date words the date fields understand. English always works there, as
@@ -247,8 +257,8 @@ for each language.
 
 ![Wisp in Japanese, German and Russian](images/languages.png)
 
-The categories Wisp starts with are named in the language it's shown in when
-your notes file is created. Rename them any time.
+The categories Wisp starts with are named in the language you choose when it
+first starts. Rename them any time.
 
 ## Where your notes are kept
 

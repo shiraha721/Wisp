@@ -176,13 +176,28 @@ export component PushButton inherits Rectangle {
     in property <string> text;
     in property <Glyph> glyph;
     in property <bool> has-glyph;
+    // The window's main action, in the accent colour.
+    in property <bool> primary;
+    // Has the keyboard: a ring around it.
+    in property <bool> focused;
     callback clicked();
-    height: 30px;
-    width: label.preferred-width + (root.has-glyph ? 50px : 30px);
+    height: root.primary ? 34px : 30px;
+    width: label.preferred-width + (root.has-glyph ? 50px : root.primary ? 40px : 30px);
     border-radius: 5px;
     border-width: 1px;
-    border-color: Theme.stroke-strong;
-    background: touch.pressed ? Theme.selected : touch.has-hover ? Theme.surface-alt : Theme.surface;
+    border-color: root.primary ? Theme.accent : Theme.stroke-strong;
+    background: root.primary
+        ? (touch.pressed ? Theme.accent.darker(0.15) : touch.has-hover ? Theme.accent.brighter(0.08) : Theme.accent)
+        : (touch.pressed ? Theme.selected : touch.has-hover ? Theme.surface-alt : Theme.surface);
+    Rectangle {
+        x: -4px;
+        y: -4px;
+        width: parent.width + 8px;
+        height: parent.height + 8px;
+        border-radius: 8px;
+        border-width: root.focused ? 2px : 0px;
+        border-color: Theme.accent;
+    }
     HorizontalLayout {
         padding-left: 14px;
         padding-right: 14px;
@@ -199,7 +214,8 @@ export component PushButton inherits Rectangle {
         label := Text {
             text: root.text;
             font-size: 13px;
-            color: Theme.text;
+            font-weight: root.primary ? 600 : 400;
+            color: root.primary ? Theme.on-accent : Theme.text;
             vertical-alignment: center;
         }
     }

@@ -133,7 +133,7 @@ msgstr "모양"
 msgid "Light, dark, or whatever your system uses."
 msgstr "밝게, 어둡게, 또는 시스템 설정대로."
 
-#: src/app/settings.rs
+#: src/app/settings.rs ui/welcome.slint
 msgid "Language"
 msgstr "언어"
 
@@ -237,15 +237,7 @@ msgstr "그다음 #이름으로, 또는 메모에서 {}로 메모를 분류하�
 msgid "Add"
 msgstr "추가"
 
-#: src/app/settings.rs
-msgid "On Wayland, also bind “wisp --toggle” to a key in your system settings"
-msgstr "Wayland에서는 시스템 설정에서 “wisp --toggle”도 키에 지정하세요"
-
-#: src/app/settings.rs
-msgid "Works in every app. Press it again to hide Wisp."
-msgstr "모든 앱에서 작동합니다. 다시 누르면 Wisp를 숨깁니다."
-
-#: src/app/settings.rs src/config.rs
+#: src/app/settings.rs src/config.rs ui/welcome.slint
 msgid "Open Wisp from anywhere"
 msgstr "어디서나 Wisp 열기"
 
@@ -334,12 +326,28 @@ msgid "Saved: {}"
 msgstr "저장했습니다: {}"
 
 #: src/app/settings.rs
+msgid "On Wayland, also bind “wisp --toggle” to a key in your system settings"
+msgstr "Wayland에서는 시스템 설정에서 “wisp --toggle”도 키에 지정하세요"
+
+#: src/app/settings.rs
+msgid "Works in every app. Press it again to hide Wisp."
+msgstr "모든 앱에서 작동합니다. 다시 누르면 Wisp를 숨깁니다."
+
+#: src/app/settings.rs src/app/welcome.rs
 msgid "{} now opens Wisp from anywhere."
 msgstr "이제 {}(으)로 어디서나 Wisp를 엽니다."
 
 #: src/app/settings.rs
 msgid "Couldn't change it: {}"
 msgstr "변경하지 못했습니다: {}"
+
+#: src/app/welcome.rs
+msgid "{} opens Wisp already."
+msgstr "이미 {}(으)로 Wisp를 엽니다."
+
+#: src/app/welcome.rs
+msgid "Press other keys to use them instead."
+msgstr "다른 키를 누르면 그 키로 바뀝니다."
 
 #: src/app.rs
 msgid "Daily"
@@ -1244,7 +1252,7 @@ msgid "Alt"
 msgstr "Alt"
 
 #. A key's name as keyboards in your language print it.
-#: src/shortcuts.rs
+#: src/shortcuts.rs ui/welcome.slint
 msgctxt "key"
 msgid "Shift"
 msgstr "Shift"
@@ -1262,7 +1270,7 @@ msgid "Super"
 msgstr "Super"
 
 #. A key's name as keyboards in your language print it.
-#: src/shortcuts.rs ui/launcher.slint ui/settings.slint
+#: src/shortcuts.rs ui/launcher.slint ui/settings.slint ui/welcome.slint
 msgctxt "key"
 msgid "Enter"
 msgstr "Enter"
@@ -1274,7 +1282,7 @@ msgid "Escape"
 msgstr "Esc"
 
 #. A key's name as keyboards in your language print it.
-#: src/shortcuts.rs ui/launcher.slint ui/settings.slint
+#: src/shortcuts.rs ui/launcher.slint ui/settings.slint ui/welcome.slint
 msgctxt "key"
 msgid "Tab"
 msgstr "Tab"
@@ -1286,7 +1294,7 @@ msgid "Space"
 msgstr "스페이스"
 
 #. A key's name as keyboards in your language print it.
-#: src/shortcuts.rs ui/settings.slint
+#: src/shortcuts.rs ui/settings.slint ui/welcome.slint
 msgctxt "key"
 msgid "Backspace"
 msgstr "Backspace"
@@ -1420,7 +1428,7 @@ msgstr "상세 내용으로"
 msgid "Mark done"
 msgstr "완료"
 
-#: ui/launcher.slint ui/settings.slint
+#: ui/launcher.slint ui/settings.slint ui/welcome.slint
 msgid "Back"
 msgstr "뒤로"
 
@@ -1536,7 +1544,7 @@ msgstr "삭제"
 msgid "Change keys"
 msgstr "키 바꾸기"
 
-#: ui/settings.slint
+#: ui/settings.slint ui/welcome.slint
 msgid "Use default"
 msgstr "기본값 사용"
 
@@ -1551,3 +1559,28 @@ msgstr "바꾸기"
 #: ui/settings.slint
 msgid "Switch"
 msgstr "전환"
+
+#: ui/welcome.slint
+msgctxt "language"
+msgid "System"
+msgstr "시스템"
+
+#: ui/welcome.slint
+msgid "Welcome to Wisp"
+msgstr "Wisp에 오신 것을 환영합니다"
+
+#: ui/welcome.slint
+msgid "Choose a language"
+msgstr "언어 고르기"
+
+#: ui/welcome.slint
+msgid "Next"
+msgstr "다음"
+
+#: ui/welcome.slint
+msgid "Choose a language and the key that opens Wisp. You can change both later in Settings."
+msgstr "언어와 Wisp를 여는 키를 고르세요. 둘 다 나중에 설정에서 바꿀 수 있습니다."
+
+#: ui/welcome.slint
+msgid "Start using Wisp"
+msgstr "Wisp 시작하기"

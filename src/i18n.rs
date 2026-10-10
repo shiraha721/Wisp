@@ -144,7 +144,7 @@ pub fn apply(choice: &str) -> &'static Language {
 /// The language a setting stands for. Unknown codes mean English.
 pub fn resolve(choice: &str) -> usize {
     if choice == SYSTEM {
-        return sys_locale::get_locales().find_map(|l| for_locale(&l)).unwrap_or(0);
+        return system_language().unwrap_or(0);
     }
     LANGUAGES.iter().position(|l| l.code == choice).unwrap_or(0)
 }
@@ -153,6 +153,11 @@ pub fn resolve(choice: &str) -> usize {
 /// language's index (unknown codes are English).
 pub fn resolve_choice(choice: &str) -> Option<usize> {
     (choice != SYSTEM).then(|| resolve(choice))
+}
+
+/// The system's language, if Wisp speaks it.
+pub fn system_language() -> Option<usize> {
+    sys_locale::get_locales().find_map(|l| for_locale(&l))
 }
 
 /// Matches a BCP 47 locale ("zh-Hant-TW", "pt-PT", "fr_CA") to a language Wisp has.

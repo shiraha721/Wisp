@@ -96,6 +96,7 @@ things, and says what kind of text it is:
 | `weekday`, `month` | Short names used in the date patterns. If your language changes a month's form inside a date (Russian "окт."), use that form. |
 | `key` | A key's name as keyboards in your language print it: `Strg` for Ctrl in German, `Échap` for Esc in French. Keep the English name if that's what keyboards show. |
 | `note details` | The label of a note's details field, which may differ from "Notes", the list of notes. |
+| `language` | The badge on the system's own language in the window of the first start. |
 
 **Counts.** Messages with a count (`{} day` / `{} days`) have a form for each
 plural case of your language; the header's `Plural-Forms` says how many.

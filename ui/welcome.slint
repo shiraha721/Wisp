@@ -1,0 +1,262 @@
+// The window Wisp opens the first time it starts: pick a language and the key
+// that opens Wisp. Both take effect as they're chosen.
+
+import { Theme, Glyph, Icon } from "theme.slint";
+import { KeyCombo, KeyHintView, Card, PushButton } from "widgets.slint";
+import { KeyHint, LanguageChoice } from "types.slint";
+
+component LanguageTile inherits Rectangle {
+    in property <LanguageChoice> language;
+    in property <bool> chosen;
+    in property <bool> focused;
+    callback clicked();
+    border-radius: 8px;
+    background: root.chosen ? Theme.accent-soft : touch.has-hover ? Theme.hover : Theme.surface;
+    border-width: root.focused ? 2px : 1px;
+    border-color: root.chosen ? Theme.accent : Theme.stroke;
+    HorizontalLayout {
+        padding-left: 12px;
+        padding-right: 10px;
+        spacing: 10px;
+        VerticalLayout {
+            alignment: center;
+            Rectangle {
+                width: 16px;
+                height: 16px;
+                border-radius: 8px;
+                border-width: root.chosen ? 0px : 1.5px;
+                border-color: Theme.text-3;
+                background: root.chosen ? Theme.accent : transparent;
+                Rectangle {
+                    width: 6px;
+                    height: 6px;
+                    border-radius: 3px;
+                    background: root.chosen ? Theme.on-accent : transparent;
+                }
+            }
+        }
+        VerticalLayout {
+            alignment: center;
+            spacing: 1px;
+            horizontal-stretch: 1;
+            HorizontalLayout {
+                spacing: 6px;
+                Text {
+                    text: root.language.name;
+                    font-size: 14px;
+                    font-weight: root.chosen ? 600 : 400;
+                    color: Theme.text;
+                    overflow: elide;
+                    horizontal-stretch: 1;
+                }
+                // The system's own language, to find it at a glance.
+                if root.language.system : VerticalLayout {
+                    alignment: center;
+                    horizontal-stretch: 0;
+                    Rectangle {
+                        height: 16px;
+                        width: badge.preferred-width + 10px;
+                        border-radius: 4px;
+                        background: Theme.neutral-soft;
+                        badge := Text {
+                            text: @tr("language" => "System");
+                            font-size: 10.5px;
+                            color: Theme.text-2;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+            if root.language.detail != "" : Text {
+                text: root.language.detail;
+                font-size: 12px;
+                color: Theme.text-3;
+                overflow: elide;
+            }
+        }
+    }
+    touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+export component WelcomeWindow inherits Window {
+    title: @tr("Welcome to Wisp");
+    preferred-width: 680px;
+    min-width: 600px;
+    background: Theme.window;
+    default-font-size: 14px;
+
+    in property <image> logo;
+    in property <[LanguageChoice]> languages;
+    in property <int> chosen;
+    // Where the keyboard is: 0 the languages, 1 the hotkey, 2 the start button.
+    in property <int> zone;
+    in property <[string]> keys;
+    in property <string> keys-message;
+    in property <bool> keys-error;
+
+    callback key(text: string, ctrl: bool, alt: bool, shift: bool, meta: bool) -> bool;
+    callback language-clicked(int);
+    callback keys-clicked();
+    callback start-clicked();
+
+    public function take-focus() {
+        router.focus();
+    }
+
+    property <string> enter: @tr("key" => "Enter");
+    property <string> tab: @tr("key" => "Tab");
+    property <[KeyHint]> hints: root.zone == 0 ? [
+        { keys: "← ↑ ↓ →", label: @tr("Choose a language") },
+        { keys: root.enter, label: @tr("Next") },
+    ] : root.zone == 1 ? [
+        { keys: @tr("key" => "Backspace"), label: @tr("Use default") },
+        { keys: root.enter, label: @tr("Next") },
+    ] : [
+        { keys: @tr("key" => "Shift") + "+" + root.tab, label: @tr("Back") },
+    ];
+
+    router := FocusScope {
+        capture-key-pressed(e) => {
+            if root.key(e.text, e.modifiers.control, e.modifiers.alt, e.modifiers.shift, e.modifiers.meta) {
+                return accept;
+            }
+            reject
+        }
+
+        VerticalLayout {
+            VerticalLayout {
+                vertical-stretch: 1;
+                alignment: start;
+                padding: 32px;
+                padding-top: 28px;
+                spacing: 10px;
+
+                HorizontalLayout {
+                    spacing: 16px;
+                    padding-bottom: 12px;
+                    VerticalLayout {
+                        alignment: start;
+                        Image {
+                            source: root.logo;
+                            width: 48px;
+                            height: 48px;
+                        }
+                    }
+                    VerticalLayout {
+                        alignment: center;
+                        spacing: 4px;
+                        Text {
+                            text: @tr("Welcome to Wisp");
+                            font-size: 24px;
+                            font-weight: 600;
+                            color: Theme.text;
+                        }
+                        Text {
+                            text: @tr("Choose a language and the key that opens Wisp. You can change both later in Settings.");
+                            font-size: 13px;
+                            color: Theme.text-2;
+                            wrap: word-wrap;
+                        }
+                    }
+                }
+
+                Text {
+                    text: @tr("Language");
+                    font-size: 13.5px;
+                    font-weight: 600;
+                    color: Theme.text;
+                }
+                Rectangle {
+                    height: 4 * 50px + 3 * 8px;
+                    for l[i] in root.languages : LanguageTile {
+                        x: mod(i, 3) * (parent.width + 8px) / 3;
+                        y: floor(i / 3) * 58px;
+                        width: (parent.width - 16px) / 3;
+                        height: 50px;
+                        language: l;
+                        chosen: i == root.chosen;
+                        focused: root.zone == 0 && i == root.chosen;
+                        clicked => { root.language-clicked(i); }
+                    }
+                }
+
+                Rectangle { height: 8px; }
+                Text {
+                    text: @tr("Open Wisp from anywhere");
+                    font-size: 13.5px;
+                    font-weight: 600;
+                    color: Theme.text;
+                }
+                Card {
+                    height: 62px;
+                    focused: root.zone == 1;
+                    TouchArea {
+                        clicked => { root.keys-clicked(); }
+                    }
+                    HorizontalLayout {
+                        padding-left: 16px;
+                        padding-right: 16px;
+                        spacing: 14px;
+                        VerticalLayout {
+                            alignment: center;
+                            Icon {
+                                glyph: Glyph.bolt;
+                                icon-size: 20px;
+                                tint: root.zone == 1 ? Theme.accent : Theme.text;
+                            }
+                        }
+                        Text {
+                            horizontal-stretch: 1;
+                            text: root.keys-message;
+                            font-size: 12.5px;
+                            color: root.keys-error ? Theme.danger : Theme.text-2;
+                            vertical-alignment: center;
+                            wrap: word-wrap;
+                        }
+                        VerticalLayout {
+                            horizontal-stretch: 0;
+                            alignment: center;
+                            KeyCombo {
+                                keys: root.keys;
+                                live: root.zone == 1;
+                            }
+                        }
+                    }
+                }
+            }
+
+            Rectangle {
+                height: 56px;
+                background: Theme.surface-alt;
+                Rectangle {
+                    y: 0;
+                    height: 1px;
+                    background: Theme.stroke;
+                }
+                HorizontalLayout {
+                    padding-left: 32px;
+                    padding-right: 24px;
+                    spacing: 18px;
+                    for h in root.hints : KeyHintView {
+                        keys: h.keys;
+                        label: h.label;
+                    }
+                    Rectangle { horizontal-stretch: 1; }
+                    VerticalLayout {
+                        alignment: center;
+                        PushButton {
+                            text: @tr("Start using Wisp");
+                            primary: true;
+                            focused: root.zone == 2;
+                            clicked => { root.start-clicked(); }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

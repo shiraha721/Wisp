@@ -88,3 +88,11 @@ export struct SettingCard {
     top: length,
     height: length,
 }
+
+// A language in the first-start window. `detail` is its name in the language
+// Wisp is showing; `system` marks the system's own language.
+export struct LanguageChoice {
+    name: string,
+    detail: string,
+    system: bool,
+}

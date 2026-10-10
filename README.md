@@ -10,7 +10,8 @@ about 25 MB of memory while it waits, and no GPU needed.
 ## What it does
 
 - **One key from anywhere.** `Alt+N` (⌃⌥N on macOS) opens Wisp with the cursor
-  in the box, like a launcher. Press it again, or `Esc`, and it's gone.
+  in the box, like a launcher. Press it again, or `Esc`, and it's gone. The
+  first start asks which language you want and lets you pick another key.
 - **Type and go.** `Enter` saves the note. Lines after the first become its
   details, and what you type also searches your notes.
 - **Dates in plain words.** `Ctrl+Enter` opens the note for a start and a due

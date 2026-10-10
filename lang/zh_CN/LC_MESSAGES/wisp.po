@@ -133,7 +133,7 @@ msgstr "外观"
 msgid "Light, dark, or whatever your system uses."
 msgstr "浅色、深色，或跟随系统。"
 
-#: src/app/settings.rs
+#: src/app/settings.rs ui/welcome.slint
 msgid "Language"
 msgstr "语言"
 
@@ -237,15 +237,7 @@ msgstr "之后用 #名称 归类笔记，或在笔记上按 {}"
 msgid "Add"
 msgstr "添加"
 
-#: src/app/settings.rs
-msgid "On Wayland, also bind “wisp --toggle” to a key in your system settings"
-msgstr "在 Wayland 下，还需在系统设置里把 “wisp --toggle” 绑定到一个按键"
-
-#: src/app/settings.rs
-msgid "Works in every app. Press it again to hide Wisp."
-msgstr "在任何应用中都有效。再按一次隐藏 Wisp。"
-
-#: src/app/settings.rs src/config.rs
+#: src/app/settings.rs src/config.rs ui/welcome.slint
 msgid "Open Wisp from anywhere"
 msgstr "随时随地打开 Wisp"
 
@@ -334,12 +326,28 @@ msgid "Saved: {}"
 msgstr "已保存：{}"
 
 #: src/app/settings.rs
+msgid "On Wayland, also bind “wisp --toggle” to a key in your system settings"
+msgstr "在 Wayland 下，还需在系统设置里把 “wisp --toggle” 绑定到一个按键"
+
+#: src/app/settings.rs
+msgid "Works in every app. Press it again to hide Wisp."
+msgstr "在任何应用中都有效。再按一次隐藏 Wisp。"
+
+#: src/app/settings.rs src/app/welcome.rs
 msgid "{} now opens Wisp from anywhere."
 msgstr "现在可用 {} 随时随地打开 Wisp。"
 
 #: src/app/settings.rs
 msgid "Couldn't change it: {}"
 msgstr "无法更改：{}"
+
+#: src/app/welcome.rs
+msgid "{} opens Wisp already."
+msgstr "{} 已经可以打开 Wisp。"
+
+#: src/app/welcome.rs
+msgid "Press other keys to use them instead."
+msgstr "按下其他按键即可改用它们。"
 
 #: src/app.rs
 msgid "Daily"
@@ -1244,7 +1252,7 @@ msgid "Alt"
 msgstr "Alt"
 
 #. A key's name as keyboards in your language print it.
-#: src/shortcuts.rs
+#: src/shortcuts.rs ui/welcome.slint
 msgctxt "key"
 msgid "Shift"
 msgstr "Shift"
@@ -1262,7 +1270,7 @@ msgid "Super"
 msgstr "Super"
 
 #. A key's name as keyboards in your language print it.
-#: src/shortcuts.rs ui/launcher.slint ui/settings.slint
+#: src/shortcuts.rs ui/launcher.slint ui/settings.slint ui/welcome.slint
 msgctxt "key"
 msgid "Enter"
 msgstr "Enter"
@@ -1274,7 +1282,7 @@ msgid "Escape"
 msgstr "Esc"
 
 #. A key's name as keyboards in your language print it.
-#: src/shortcuts.rs ui/launcher.slint ui/settings.slint
+#: src/shortcuts.rs ui/launcher.slint ui/settings.slint ui/welcome.slint
 msgctxt "key"
 msgid "Tab"
 msgstr "Tab"
@@ -1286,7 +1294,7 @@ msgid "Space"
 msgstr "空格"
 
 #. A key's name as keyboards in your language print it.
-#: src/shortcuts.rs ui/settings.slint
+#: src/shortcuts.rs ui/settings.slint ui/welcome.slint
 msgctxt "key"
 msgid "Backspace"
 msgstr "Backspace"
@@ -1420,7 +1428,7 @@ msgstr "转到详情"
 msgid "Mark done"
 msgstr "标记完成"
 
-#: ui/launcher.slint ui/settings.slint
+#: ui/launcher.slint ui/settings.slint ui/welcome.slint
 msgid "Back"
 msgstr "返回"
 
@@ -1536,7 +1544,7 @@ msgstr "删除"
 msgid "Change keys"
 msgstr "更改按键"
 
-#: ui/settings.slint
+#: ui/settings.slint ui/welcome.slint
 msgid "Use default"
 msgstr "使用默认"
 
@@ -1551,3 +1559,28 @@ msgstr "更改"
 #: ui/settings.slint
 msgid "Switch"
 msgstr "切换"
+
+#: ui/welcome.slint
+msgctxt "language"
+msgid "System"
+msgstr "系统"
+
+#: ui/welcome.slint
+msgid "Welcome to Wisp"
+msgstr "欢迎使用 Wisp"
+
+#: ui/welcome.slint
+msgid "Choose a language"
+msgstr "选择语言"
+
+#: ui/welcome.slint
+msgid "Next"
+msgstr "下一步"
+
+#: ui/welcome.slint
+msgid "Choose a language and the key that opens Wisp. You can change both later in Settings."
+msgstr "选择语言和打开 Wisp 的快捷键。两者以后都可以在设置中更改。"
+
+#: ui/welcome.slint
+msgid "Start using Wisp"
+msgstr "开始使用 Wisp"

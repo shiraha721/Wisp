@@ -130,11 +130,9 @@ fn main() {
         with_app(|app| app.tick());
     });
 
-    if command != "none" {
-        slint::Timer::single_shot(Duration::ZERO, move || {
-            with_app(|app| app.remote(command));
-        });
-    }
+    slint::Timer::single_shot(Duration::ZERO, move || {
+        with_app(|app| app.start(command));
+    });
 
     if let Err(err) = slint::run_event_loop_until_quit() {
         eprintln!("wisp: {err}");

@@ -108,6 +108,7 @@ src/app.rs             the controller: showing and hiding, keys, the list,
                        categories, undo, reminders, the shortcut list
 src/app/editor.rs      the note editor
 src/app/settings.rs    the settings window: pages, cards and their keys
+src/app/welcome.rs     the window of the first start: language and hotkey
 src/model.rs           notes, reminder rules, categories and the JSON store
 src/dates.rs           date parsing (English) and date labels
 src/dates/words.rs     date words of other languages, rewritten into English
@@ -120,6 +121,7 @@ src/icon.rs            the icon PNGs
 ui/app.slint           what Rust sees, and the tray menu
 ui/launcher.slint      the main window: list, editor, shortcut list
 ui/settings.slint      the settings window
+ui/welcome.slint       the window of the first start
 ui/theme.slint         colours, category colours, sizes and the icon set
 ui/widgets.slint       shared pieces: keycaps, tiles, chips, cards, inputs
 lang/                  translations (see translating.md)
@@ -197,6 +199,17 @@ Each page is a list of `Entry`s (`app/settings.rs`) turned into `SettingCard`s:
 a struct with a `kind` (shortcut, switch, theme picker, button, information,
 heading, category, choice) that `settings.slint` draws. Keys move a cursor
 through the entries; the selected card has a highlight.
+
+### The first start
+
+When there was no `settings.json` (`initialized` is false), `App::start` opens
+the welcome window (`app/welcome.rs`) instead of the launcher. It uses the
+settings' own code: choosing a language calls `set_language`, and a
+combination pressed on the key card goes through `combo_problem` and
+`change_summon`, so both take effect at once. The first categories are renamed
+into the chosen language while they're untouched (`Store::rename_seeded`).
+While the window is up, the summon key brings it forward instead of the
+launcher; finishing closes it and opens the launcher.
 
 ### Platform
 

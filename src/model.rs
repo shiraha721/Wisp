@@ -512,6 +512,21 @@ impl Store {
         true
     }
 
+    /// Renames the categories from `from` to `to` (the first categories' names in
+    /// another language), if they're still exactly the ones `from` names. Returns
+    /// whether it did.
+    pub fn rename_seeded(&mut self, from: &[&str], to: &[&str]) -> bool {
+        let names: Vec<&str> = self.categories().iter().map(|c| c.name.as_str()).collect();
+        if names != from || from == to {
+            return false;
+        }
+        let ids: Vec<u64> = self.categories().iter().map(|c| c.id).collect();
+        for (id, name) in ids.into_iter().zip(to) {
+            let _ = self.rename_category(id, name);
+        }
+        true
+    }
+
     /// Adds a category with the next unused colour.
     pub fn add_category(&mut self, name: &str) -> Result<u64, String> {
         let name = self.check_name(name, None)?;
@@ -749,6 +764,21 @@ mod tests {
         store.remove_category(work);
         assert!(store.category(work).is_none());
         assert_eq!(store.get(note).unwrap().category, None, "its notes stay, without a category");
+    }
+
+    #[test]
+    fn first_categories_follow_a_new_language() {
+        let mut store = Store { path: PathBuf::new(), data: Data::default() };
+        store.seed_categories(&["Daily", "Work", "School"]);
+        let names = |s: &Store| s.categories().iter().map(|c| c.name.clone()).collect::<Vec<_>>();
+        assert!(store.rename_seeded(&["Daily", "Work", "School"], &["日常", "仕事", "学校"]));
+        assert_eq!(names(&store), ["日常", "仕事", "学校"]);
+        assert!(!store.rename_seeded(&["Daily", "Work", "School"], &["Täglich", "Arbeit", "Schule"]), "not those names any more");
+
+        let id = store.categories()[1].id;
+        store.rename_category(id, "Office").unwrap();
+        assert!(!store.rename_seeded(&["日常", "仕事", "学校"], &["Daily", "Work", "School"]), "changed by hand: left alone");
+        assert_eq!(names(&store), ["日常", "Office", "学校"]);
     }
 
     #[test]

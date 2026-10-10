@@ -1,10 +1,12 @@
 //! The controller: owns the notes and settings, reacts to keys and clicks, and
 //! keeps the windows' properties in step with the data.
 //!
-//! The note editor lives in `app/editor.rs`, the settings window in `app/settings.rs`.
+//! The note editor lives in `app/editor.rs`, the settings window in
+//! `app/settings.rs`, and the window of the first start in `app/welcome.rs`.
 
 mod editor;
 mod settings;
+mod welcome;
 
 use crate::config::{self, Action, Config, Theme};
 use crate::dates;
@@ -105,6 +107,14 @@ pub struct App {
     placed: bool,
     last_minute: i64,
     tray: Option<crate::Tray>,
+    /// No settings were saved before this start: the welcome window comes first.
+    first_run: bool,
+    welcome: Option<welcome::Welcome>,
+}
+
+/// The categories a new notes file starts with, in the current language.
+fn first_categories() -> [&'static str; 3] {
+    [tr!("Daily"), tr!("Work"), tr!("School")]
 }
 
 impl App {
@@ -115,13 +125,14 @@ impl App {
         i18n::apply(&config.language);
         let (mut store, store_warning) = Store::load(&data_dir.join("notes.json"));
         // A new notes file starts with a few categories, named in the language Wisp speaks.
-        if store.seed_categories(&[tr!("Daily"), tr!("Work"), tr!("School")]) && store_warning.is_none() {
+        if store.seed_categories(&first_categories()) && store_warning.is_none() {
             if let Err(err) = store.save() {
                 eprintln!("wisp: couldn't save notes: {err}");
             }
         }
 
-        if !config.initialized {
+        let first_run = !config.initialized;
+        if first_run {
             // Turn on "start with the computer" once, for release builds.
             config.launch_at_startup = !cfg!(debug_assertions);
             config.initialized = true;
@@ -166,6 +177,8 @@ impl App {
             placed: false,
             last_minute: 0,
             tray: None,
+            first_run,
+            welcome: None,
         };
 
         match GlobalHotKeyManager::new() {
@@ -272,6 +285,10 @@ impl App {
 
     /// Brings the window up, centred near the top of the screen, ready to type.
     pub fn summon(&mut self) {
+        if self.welcome.is_some() {
+            self.welcome_summoned();
+            return;
+        }
         let ui = self.ui();
         if ui.get_view() == View::Help {
             self.show_list(self.listing);
@@ -356,6 +373,16 @@ impl App {
         self.dismiss();
     }
 
+    /// Carries out the command Wisp was started with, after the welcome window
+    /// the first time.
+    pub fn start(&mut self, command: &str) {
+        if self.first_run {
+            self.open_welcome();
+        } else {
+            self.remote(command);
+        }
+    }
+
     pub fn remote(&mut self, command: &str) {
         match command {
             "show" => self.summon(),
@@ -373,6 +400,7 @@ impl App {
         self.persist();
         let _ = self.ui().window().hide();
         let _ = self.settings_ui.hide();
+        self.close_welcome();
         if let Some(tray) = &self.tray {
             let _ = tray.hide();
         }
@@ -1055,6 +1083,9 @@ impl App {
         };
         ui.global::<crate::Theme>().set_choice(choice);
         self.settings_ui.global::<crate::Theme>().set_choice(choice);
+        if let Some(welcome) = &self.welcome {
+            welcome.set_theme(choice);
+        }
         if let Some(tray) = &self.tray {
             tray.set_summon_label(self.summon_label().into());
         }

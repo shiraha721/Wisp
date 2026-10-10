@@ -115,7 +115,7 @@ part of `text`, are split into `text` and `notes` when loaded.
 | `open_on_reminder` | Show the window when a reminder rings, as well as the notification. |
 | `theme` | `system`, `light` or `dark`. |
 | `language` | `en`, `de`, `es`, `eo`, `fr`, `it`, `pt_BR`, `ru`, `ja`, `ko`, `zh_CN`, `zh_TW`, or `system` to follow the system's language. |
-| `initialized` | Set after the first start, which switches on starting with the computer (release builds only). |
+| `initialized` | Set at the first start, which asks for the language and the summon key and switches on starting with the computer (release builds only). Set it to `false` to see that window again; starting with the computer is then switched on again too. |
 
 The names in `shortcuts`, with their defaults:
 

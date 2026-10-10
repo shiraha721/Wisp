@@ -133,7 +133,7 @@ msgstr "外観"
 msgid "Light, dark, or whatever your system uses."
 msgstr "ライト、ダーク、またはシステムに合わせる。"
 
-#: src/app/settings.rs
+#: src/app/settings.rs ui/welcome.slint
 msgid "Language"
 msgstr "言語"
 
@@ -237,15 +237,7 @@ msgstr "あとは #名前 で、またはメモ上で {} を押して振り分�
 msgid "Add"
 msgstr "追加"
 
-#: src/app/settings.rs
-msgid "On Wayland, also bind “wisp --toggle” to a key in your system settings"
-msgstr "Wayland では、システム設定で「wisp --toggle」もキーに割り当ててください"
-
-#: src/app/settings.rs
-msgid "Works in every app. Press it again to hide Wisp."
-msgstr "どのアプリでも使えます。もう一度押すと Wisp を隠します。"
-
-#: src/app/settings.rs src/config.rs
+#: src/app/settings.rs src/config.rs ui/welcome.slint
 msgid "Open Wisp from anywhere"
 msgstr "どこからでも Wisp を開く"
 
@@ -334,12 +326,28 @@ msgid "Saved: {}"
 msgstr "保存しました：{}"
 
 #: src/app/settings.rs
+msgid "On Wayland, also bind “wisp --toggle” to a key in your system settings"
+msgstr "Wayland では、システム設定で「wisp --toggle」もキーに割り当ててください"
+
+#: src/app/settings.rs
+msgid "Works in every app. Press it again to hide Wisp."
+msgstr "どのアプリでも使えます。もう一度押すと Wisp を隠します。"
+
+#: src/app/settings.rs src/app/welcome.rs
 msgid "{} now opens Wisp from anywhere."
 msgstr "{} でどこからでも Wisp が開きます。"
 
 #: src/app/settings.rs
 msgid "Couldn't change it: {}"
 msgstr "変更できませんでした：{}"
+
+#: src/app/welcome.rs
+msgid "{} opens Wisp already."
+msgstr "{} ですでに Wisp が開きます。"
+
+#: src/app/welcome.rs
+msgid "Press other keys to use them instead."
+msgstr "別のキーを押すと、そのキーに変更できます。"
 
 #: src/app.rs
 msgid "Daily"
@@ -1244,7 +1252,7 @@ msgid "Alt"
 msgstr "Alt"
 
 #. A key's name as keyboards in your language print it.
-#: src/shortcuts.rs
+#: src/shortcuts.rs ui/welcome.slint
 msgctxt "key"
 msgid "Shift"
 msgstr "Shift"
@@ -1262,7 +1270,7 @@ msgid "Super"
 msgstr "Super"
 
 #. A key's name as keyboards in your language print it.
-#: src/shortcuts.rs ui/launcher.slint ui/settings.slint
+#: src/shortcuts.rs ui/launcher.slint ui/settings.slint ui/welcome.slint
 msgctxt "key"
 msgid "Enter"
 msgstr "Enter"
@@ -1274,7 +1282,7 @@ msgid "Escape"
 msgstr "Esc"
 
 #. A key's name as keyboards in your language print it.
-#: src/shortcuts.rs ui/launcher.slint ui/settings.slint
+#: src/shortcuts.rs ui/launcher.slint ui/settings.slint ui/welcome.slint
 msgctxt "key"
 msgid "Tab"
 msgstr "Tab"
@@ -1286,7 +1294,7 @@ msgid "Space"
 msgstr "スペース"
 
 #. A key's name as keyboards in your language print it.
-#: src/shortcuts.rs ui/settings.slint
+#: src/shortcuts.rs ui/settings.slint ui/welcome.slint
 msgctxt "key"
 msgid "Backspace"
 msgstr "Backspace"
@@ -1420,7 +1428,7 @@ msgstr "詳細へ"
 msgid "Mark done"
 msgstr "完了にする"
 
-#: ui/launcher.slint ui/settings.slint
+#: ui/launcher.slint ui/settings.slint ui/welcome.slint
 msgid "Back"
 msgstr "戻る"
 
@@ -1536,7 +1544,7 @@ msgstr "削除"
 msgid "Change keys"
 msgstr "キーを変更"
 
-#: ui/settings.slint
+#: ui/settings.slint ui/welcome.slint
 msgid "Use default"
 msgstr "既定値に戻す"
 
@@ -1551,3 +1559,28 @@ msgstr "変更"
 #: ui/settings.slint
 msgid "Switch"
 msgstr "切り替え"
+
+#: ui/welcome.slint
+msgctxt "language"
+msgid "System"
+msgstr "システム"
+
+#: ui/welcome.slint
+msgid "Welcome to Wisp"
+msgstr "Wisp へようこそ"
+
+#: ui/welcome.slint
+msgid "Choose a language"
+msgstr "言語を選ぶ"
+
+#: ui/welcome.slint
+msgid "Next"
+msgstr "次へ"
+
+#: ui/welcome.slint
+msgid "Choose a language and the key that opens Wisp. You can change both later in Settings."
+msgstr "言語と、Wisp を開くキーを選んでください。どちらも後から設定で変更できます。"
+
+#: ui/welcome.slint
+msgid "Start using Wisp"
+msgstr "Wisp を使い始める"

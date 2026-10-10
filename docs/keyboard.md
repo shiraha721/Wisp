@@ -94,6 +94,20 @@ On "Add a reminder", `Enter` adds one.
 
 These also work while editing a note: Wisp saves the note first.
 
+## The first start
+
+The window that asks for your language and the key that opens Wisp.
+
+| Key | Does |
+| --- | --- |
+| `←` `→` `↑` `↓` | Choose a language. `↓` from the bottom row goes on to the key. |
+| `Enter`, `Tab` | Next: from the languages to the key, then to **Start using Wisp**. |
+| `Shift+Tab`, `↑` | Back. |
+| Any combination, on the key | Open Wisp with it from now on. |
+| `Backspace`, `Delete`, on the key | Back to `Alt+N`. |
+| `Enter`, `Space`, on the button | Start using Wisp. |
+| `Esc` | Start using Wisp with what's chosen. |
+
 ## Settings
 
 The page list on the left:

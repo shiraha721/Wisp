@@ -343,16 +343,11 @@ impl App {
                 ..Default::default()
             },
             Entry::Summon => {
-                let description = match &self.summon_problem {
-                    Some(problem) => problem.clone(),
-                    None if on_wayland() => tr!("On Wayland, also bind “wisp --toggle” to a key in your system settings").into(),
-                    None => tr!("Works in every app. Press it again to hide Wisp.").into(),
-                };
                 SettingCard {
                     kind: 0,
                     glyph: Glyph::Bolt,
                     title: tr!("Open Wisp from anywhere").into(),
-                    description: description.into(),
+                    description: self.summon_note().into(),
                     keys: keys(self.summon_keys()),
                     ..Default::default()
                 }
@@ -806,11 +801,7 @@ impl App {
             Entry::Shortcut(i) => ACTIONS[i].id,
             _ => return,
         };
-        let valid = if entry == Entry::Summon { combo.validate_global() } else { combo.validate_local() };
-        let problem = valid
-            .err()
-            .or_else(|| self.config.conflict(&combo, id).map(|other| tr!("{} is taken by “{}”", combo.label(), i18n::tr(other))));
-        if let Some(problem) = problem {
+        if let Some(problem) = self.combo_problem(&combo, id) {
             self.settings.error = Some((entry, problem));
             self.render_settings(); // keep listening
             return;
@@ -829,23 +820,49 @@ impl App {
         self.render_settings();
     }
 
+    /// Why `combo` can't be the keys for `id` (an action id, or "summon"), if it can't.
+    pub(super) fn combo_problem(&self, combo: &Combo, id: &str) -> Option<String> {
+        let valid = if id == "summon" { combo.validate_global() } else { combo.validate_local() };
+        valid
+            .err()
+            .or_else(|| self.config.conflict(combo, id).map(|other| tr!("{} is taken by “{}”", combo.label(), i18n::tr(other))))
+    }
+
+    /// The line under the summon key: what's wrong with it, or how it works.
+    pub(super) fn summon_note(&self) -> String {
+        match &self.summon_problem {
+            Some(problem) => problem.clone(),
+            None if on_wayland() => tr!("On Wayland, also bind “wisp --toggle” to a key in your system settings").into(),
+            None => tr!("Works in every app. Press it again to hide Wisp.").into(),
+        }
+    }
+
     fn apply_summon(&mut self, combo: Combo) {
+        match self.change_summon(&combo) {
+            Ok(()) => self.settings_toast(tr!("{} now opens Wisp from anywhere.", combo.label()), false),
+            Err(err) => self.settings.error = Some((Entry::Summon, err)),
+        }
+    }
+
+    /// Makes `combo` the summon key and saves it. If it can't be claimed, the old
+    /// key keeps working.
+    pub(super) fn change_summon(&mut self, combo: &Combo) -> Result<(), String> {
         let previous = self.summon.clone();
-        match self.register_summon(&combo) {
+        match self.register_summon(combo) {
             Ok(()) => {
-                self.config.set_summon(&combo);
+                self.config.set_summon(combo);
                 self.summon_problem = None;
                 self.save_config();
                 self.apply_config_to_ui();
-                self.settings_toast(tr!("{} now opens Wisp from anywhere.", combo.label()), false);
+                Ok(())
             }
             Err(err) => {
-                self.settings.error = Some((Entry::Summon, err));
                 if let (Some(manager), Some((hk, keys))) = (&self.hotkeys, previous) {
                     if manager.register(hk).is_ok() {
                         self.summon = Some((hk, keys));
                     }
                 }
+                Err(err)
             }
         }
     }
@@ -861,7 +878,7 @@ impl App {
     }
 
     /// Shows Wisp in another language (`None`: the system's), right away.
-    fn set_language(&mut self, choice: Option<usize>) {
+    pub(super) fn set_language(&mut self, choice: Option<usize>) {
         self.config.language = choice.map_or_else(|| i18n::SYSTEM.to_owned(), |i| LANGUAGES[i].code.to_owned());
         self.save_config();
         i18n::apply(&self.config.language);

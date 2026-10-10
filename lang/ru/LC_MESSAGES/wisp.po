@@ -135,7 +135,7 @@ msgstr "Оформление"
 msgid "Light, dark, or whatever your system uses."
 msgstr "Светлое, тёмное или как в системе."
 
-#: src/app/settings.rs
+#: src/app/settings.rs ui/welcome.slint
 msgid "Language"
 msgstr "Язык"
 
@@ -239,15 +239,7 @@ msgstr "Затем кладите заметки с помощью #имени �
 msgid "Add"
 msgstr "Добавить"
 
-#: src/app/settings.rs
-msgid "On Wayland, also bind “wisp --toggle” to a key in your system settings"
-msgstr "В Wayland также назначьте «wisp --toggle» на клавишу в настройках системы"
-
-#: src/app/settings.rs
-msgid "Works in every app. Press it again to hide Wisp."
-msgstr "Работает в любом приложении. Нажмите ещё раз, чтобы скрыть Wisp."
-
-#: src/app/settings.rs src/config.rs
+#: src/app/settings.rs src/config.rs ui/welcome.slint
 msgid "Open Wisp from anywhere"
 msgstr "Открывать Wisp откуда угодно"
 
@@ -336,12 +328,28 @@ msgid "Saved: {}"
 msgstr "Сохранено: {}"
 
 #: src/app/settings.rs
+msgid "On Wayland, also bind “wisp --toggle” to a key in your system settings"
+msgstr "В Wayland также назначьте «wisp --toggle» на клавишу в настройках системы"
+
+#: src/app/settings.rs
+msgid "Works in every app. Press it again to hide Wisp."
+msgstr "Работает в любом приложении. Нажмите ещё раз, чтобы скрыть Wisp."
+
+#: src/app/settings.rs src/app/welcome.rs
 msgid "{} now opens Wisp from anywhere."
 msgstr "{} теперь открывает Wisp откуда угодно."
 
 #: src/app/settings.rs
 msgid "Couldn't change it: {}"
 msgstr "Не удалось изменить: {}"
+
+#: src/app/welcome.rs
+msgid "{} opens Wisp already."
+msgstr "{} уже открывает Wisp."
+
+#: src/app/welcome.rs
+msgid "Press other keys to use them instead."
+msgstr "Нажмите другие клавиши, чтобы использовать их."
 
 #: src/app.rs
 msgid "Daily"
@@ -1248,7 +1256,7 @@ msgid "Alt"
 msgstr "Alt"
 
 #. A key's name as keyboards in your language print it.
-#: src/shortcuts.rs
+#: src/shortcuts.rs ui/welcome.slint
 msgctxt "key"
 msgid "Shift"
 msgstr "Shift"
@@ -1266,7 +1274,7 @@ msgid "Super"
 msgstr "Super"
 
 #. A key's name as keyboards in your language print it.
-#: src/shortcuts.rs ui/launcher.slint ui/settings.slint
+#: src/shortcuts.rs ui/launcher.slint ui/settings.slint ui/welcome.slint
 msgctxt "key"
 msgid "Enter"
 msgstr "Enter"
@@ -1278,7 +1286,7 @@ msgid "Escape"
 msgstr "Esc"
 
 #. A key's name as keyboards in your language print it.
-#: src/shortcuts.rs ui/launcher.slint ui/settings.slint
+#: src/shortcuts.rs ui/launcher.slint ui/settings.slint ui/welcome.slint
 msgctxt "key"
 msgid "Tab"
 msgstr "Tab"
@@ -1290,7 +1298,7 @@ msgid "Space"
 msgstr "Пробел"
 
 #. A key's name as keyboards in your language print it.
-#: src/shortcuts.rs ui/settings.slint
+#: src/shortcuts.rs ui/settings.slint ui/welcome.slint
 msgctxt "key"
 msgid "Backspace"
 msgstr "Backspace"
@@ -1424,7 +1432,7 @@ msgstr "К подробностям"
 msgid "Mark done"
 msgstr "Выполнено"
 
-#: ui/launcher.slint ui/settings.slint
+#: ui/launcher.slint ui/settings.slint ui/welcome.slint
 msgid "Back"
 msgstr "Назад"
 
@@ -1540,7 +1548,7 @@ msgstr "Удалить"
 msgid "Change keys"
 msgstr "Изменить клавиши"
 
-#: ui/settings.slint
+#: ui/settings.slint ui/welcome.slint
 msgid "Use default"
 msgstr "По умолчанию"
 
@@ -1555,3 +1563,28 @@ msgstr "Изменить"
 #: ui/settings.slint
 msgid "Switch"
 msgstr "Переключить"
+
+#: ui/welcome.slint
+msgctxt "language"
+msgid "System"
+msgstr "Системный"
+
+#: ui/welcome.slint
+msgid "Welcome to Wisp"
+msgstr "Добро пожаловать в Wisp"
+
+#: ui/welcome.slint
+msgid "Choose a language"
+msgstr "Выбрать язык"
+
+#: ui/welcome.slint
+msgid "Next"
+msgstr "Далее"
+
+#: ui/welcome.slint
+msgid "Choose a language and the key that opens Wisp. You can change both later in Settings."
+msgstr "Выберите язык и клавиши, которые открывают Wisp. И то и другое можно изменить позже в настройках."
+
+#: ui/welcome.slint
+msgid "Start using Wisp"
+msgstr "Начать работу с Wisp"

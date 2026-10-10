@@ -119,7 +119,7 @@ impl Combo {
         Ok(HotKey::new(Some(mods), code))
     }
 
-    /// How the combo is shown to people: "Ctrl+Alt+Shift+N" or "⌘⌥⇧N" on macOS.
+    /// How the combo is shown to people: "Ctrl+Alt+Shift+N", or "⌥⇧⌘N" on macOS.
     pub fn label(&self) -> String {
         let parts = self.parts();
         if cfg!(target_os = "macos") {
@@ -130,7 +130,7 @@ impl Combo {
     }
 
     /// The keys one by one, as printed on keycaps: ["Ctrl", "Alt", "N"], ["Strg", "Alt", "N"]
-    /// in German, or ["⌘", "⌥", "N"] on macOS.
+    /// in German, or ["⌥", "⌘", "N"] on macOS (in Apple's order: ⌃⌥⇧⌘).
     pub fn parts(&self) -> Vec<String> {
         let key = match self.key.as_str() {
             "Up" => "↑".to_owned(),
@@ -394,7 +394,9 @@ mod tests {
     fn keycap_parts() {
         let parts = c("Ctrl+Alt+Shift+N").parts();
         if cfg!(target_os = "macos") {
-            assert_eq!(parts, ["⌘", "⌥", "⇧", "N"]);
+            // Apple's order: ⌃⌥⇧⌘.
+            assert_eq!(parts, ["⌥", "⇧", "⌘", "N"]);
+            assert_eq!(c("Ctrl+Shift+R").label(), "⇧⌘R");
         } else {
             assert_eq!(parts, ["Ctrl", "Alt", "Shift", "N"]);
             assert_eq!(c("Ctrl+Down").label(), "Ctrl+↓");

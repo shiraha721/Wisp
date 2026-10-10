@@ -175,7 +175,7 @@ Returning `false` lets the text field have the key.
 
 `shortcuts.rs` reads key events into `Combo`s, writes and parses them as text
 (`"Ctrl+Shift+R"`), turns them into global-hotkey `HotKey`s and prints them for
-people (`Ctrl+Shift+R`, `Strg+Umschalt+R`, `⌘⇧R`). "Ctrl" means ⌘ on macOS, so
+people (`Ctrl+Shift+R`, `Strg+Umschalt+R`, `⇧⌘R`). "Ctrl" means ⌘ on macOS, so
 one settings file works everywhere.
 
 ### Notes, categories and reminders

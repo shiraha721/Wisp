@@ -68,7 +68,14 @@ jobs:
 
       - name: Test
         if: matrix.test
-        run: cargo test --locked --target ${{ matrix.target }}
+        shell: bash
+        run: |
+          if ! cargo test --locked --target ${{ matrix.target }} 2>&1 | tee test.log; then
+            # Put the failures on the run's summary page too, where they're easier to find.
+            failures=$(grep -E -A4 "^thread '.*panicked at" test.log | head -60 | tr -d '\r' | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+            echo "::error title=Tests failed on ${{ matrix.name }}::${failures}"
+            exit 1
+          fi
 
       - name: Clippy
         if: matrix.test

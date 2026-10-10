@@ -119,6 +119,8 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           path: downloads
+          # The Windows build is a zip of its own: keep it as it is.
+          skip-decompress: true
 
       - name: Publish
         env:
@@ -132,7 +134,10 @@ jobs:
             name=$(basename "$file")
             cp "$file" "release/wisp-$version-${name#wisp-}"
           done
-          test "$(ls release | wc -l)" -eq 4 || { ls -R downloads; echo "::error::Expected 4 builds"; exit 1; }
+          if [ "$(ls release | wc -l)" -ne 4 ]; then
+            echo "::error::Expected 4 builds, found: $(find downloads -type f | tr '\n' ' ')"
+            exit 1
+          fi
           (cd release && sha256sum -- * > SHA256SUMS.txt)
           # The notes are this version's section of CHANGELOG.md.
           awk -v v="$version" '/^## / { on = ($2 == v); next } on' CHANGELOG.md > notes.md

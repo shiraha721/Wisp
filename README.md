@@ -59,6 +59,8 @@ cargo build --release
 cargo test
 ```
 
+Every push builds Wisp for Windows, Linux and macOS: the programs are attached
+to each run of the [Build workflow](https://github.com/shiraha721/Wisp/actions/workflows/build.yml).
 See [Development](docs/development.md) for cross-compiling to Windows and more.
 
 ## License

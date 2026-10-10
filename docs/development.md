@@ -7,6 +7,7 @@ clicks back.
 - [Building](#building)
 - [Testing](#testing)
 - [Cross-compiling for Windows](#cross-compiling-for-windows)
+- [Continuous integration](#continuous-integration)
 - [How the code fits together](#how-the-code-fits-together)
 - [Icons](#icons)
 - [Releasing](#releasing)
@@ -81,6 +82,25 @@ linker = "x86_64-w64-mingw32-gcc"
 `build.rs` compiles the icon, manifest and version details with
 `x86_64-w64-mingw32-windres`, which comes with MinGW-w64. The program ends up in
 `target/x86_64-pc-windows-gnu/release/wisp.exe`.
+
+## Continuous integration
+
+`.github/workflows/build.yml` runs on every push to `main`, on tags starting
+with `v`, on pull requests, and by hand from the Actions tab. On Windows, Linux
+and macOS (Apple silicon) it runs `cargo test` and `cargo clippy` (warnings
+fail the run), then builds a release program for Windows x64, Linux x64 and
+macOS (Apple silicon and Intel). Each run's page lists them under Artifacts:
+
+| Artifact | Holds |
+| --- | --- |
+| `wisp-windows-x64` | `Wisp.exe`, with the license and README, zipped |
+| `wisp-linux-x64.tar.gz` | the `wisp` program, license and README |
+| `wisp-macos-arm64.tar.gz`, `wisp-macos-x64.tar.gz` | the same for macOS |
+
+The macOS programs aren't signed or bundled as an app: run them from a
+terminal, and allow them under System Settings → Privacy & Security the first
+time. Artifacts are kept for 90 days, and downloading them needs a GitHub
+account.
 
 ## How the code fits together
 
@@ -253,7 +273,10 @@ cargo run --release --manifest-path tools/icons/Cargo.toml
 1. Update `version` in `Cargo.toml`.
 2. `cargo test` and `cargo clippy --all-targets`. The tests fail if a translation
    is missing; see [Translating](translating.md).
-3. Build on (or for) each system and try it: open, write, schedule, let a
-   reminder ring, switch language, quit and start again.
-4. On Windows, ship `wisp.exe` alone (renamed `Wisp.exe` if you like). It makes
-   its `data` folder on first start.
+3. Push a tag such as `v0.2.0`; the Build workflow tests and builds every
+   system's program (see [Continuous integration](#continuous-integration)).
+4. Try each one: open, write, schedule, let a reminder ring, switch language,
+   quit and start again. Start once with an empty data folder to see the
+   welcome window.
+5. On Windows, ship `Wisp.exe` alone. It makes its `data` folder on first
+   start.

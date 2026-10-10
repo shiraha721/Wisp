@@ -1,0 +1,109 @@
+# Tests Wisp on Windows, Linux and macOS, and builds a release program for each,
+# attached to the run as artifacts: a zip with Wisp.exe for Windows, a tarball
+# with the wisp program for Linux and macOS.
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows x64
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact: wisp-windows-x64
+            test: true
+          - name: Linux x64
+            os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact: wisp-linux-x64
+            test: true
+          - name: macOS Apple silicon
+            os: macos-latest
+            target: aarch64-apple-darwin
+            artifact: wisp-macos-arm64
+            test: true
+          # Built on the Apple silicon runner, so its tests can't run there.
+          - name: macOS Intel
+            os: macos-latest
+            target: x86_64-apple-darwin
+            artifact: wisp-macos-x64
+            test: false
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Linux libraries
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y pkg-config libfontconfig1-dev
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+          components: clippy
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+
+      - name: Test
+        if: matrix.test
+        run: cargo test --locked --target ${{ matrix.target }}
+
+      - name: Clippy
+        if: matrix.test
+        run: cargo clippy --locked --all-targets --target ${{ matrix.target }} -- -D warnings
+
+      - name: Build
+        run: cargo build --release --locked --target ${{ matrix.target }}
+
+      - name: Package
+        shell: bash
+        run: |
+          mkdir dist
+          release=target/${{ matrix.target }}/release
+          if [ "$RUNNER_OS" = Windows ]; then
+            cp "$release/wisp.exe" dist/Wisp.exe
+            cp LICENSE README.md dist/
+          else
+            # Artifacts don't keep file permissions; a tarball keeps wisp runnable.
+            mkdir staging
+            cp "$release/wisp" LICENSE README.md staging/
+            tar -czf "dist/${{ matrix.artifact }}.tar.gz" -C staging wisp LICENSE README.md
+          fi
+
+      - name: Upload (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/
+          if-no-files-found: error
+
+      - name: Upload
+        if: runner.os != 'Windows'
+        uses: actions/upload-artifact@v7
+        with:
+          path: dist/${{ matrix.artifact }}.tar.gz
+          archive: false
+          if-no-files-found: error

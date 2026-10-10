@@ -1,0 +1,5 @@
+# Keep LF everywhere, Windows checkouts included: the translation catalogs are
+# compared with what the code generates, byte for byte.
+* text=auto eol=lf
+*.png binary
+*.ico binary

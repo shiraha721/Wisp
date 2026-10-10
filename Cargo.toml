@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 description = "A tiny keyboard-first catcher for ideas, memos and to-dos"
 license = "MIT"
+repository = "https://github.com/shiraha721/Wisp"
 
 [dependencies]
 # The software renderer: no GPU driver needed, and about a quarter of the memory of

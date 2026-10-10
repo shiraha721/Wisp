@@ -1,6 +1,7 @@
-# Tests Wisp on Windows, Linux and macOS, and builds a release program for each,
+# Tests Wisp on Windows, Linux and macOS and builds a release program for each,
 # attached to the run as artifacts: a zip with Wisp.exe for Windows, a tarball
-# with the wisp program for Linux and macOS.
+# with the wisp program for Linux and macOS. For a tag like v0.2.0 it also
+# publishes them as the GitHub release "Wisp 0.2.0".
 name: Build
 
 on:
@@ -31,23 +32,23 @@ jobs:
           - name: Windows x64
             os: windows-latest
             target: x86_64-pc-windows-msvc
-            artifact: wisp-windows-x64
+            file: wisp-windows-x64.zip
             test: true
           - name: Linux x64
             os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            artifact: wisp-linux-x64
+            file: wisp-linux-x64.tar.gz
             test: true
           - name: macOS Apple silicon
             os: macos-latest
             target: aarch64-apple-darwin
-            artifact: wisp-macos-arm64
+            file: wisp-macos-arm64.tar.gz
             test: true
           # Built on the Apple silicon runner, so its tests can't run there.
           - name: macOS Intel
             os: macos-latest
             target: x86_64-apple-darwin
-            artifact: wisp-macos-x64
+            file: wisp-macos-x64.tar.gz
             test: false
 
     steps:
@@ -87,30 +88,53 @@ jobs:
       - name: Package
         shell: bash
         run: |
-          mkdir dist
+          mkdir dist staging
           release=target/${{ matrix.target }}/release
+          cp LICENSE README.md staging/
           if [ "$RUNNER_OS" = Windows ]; then
-            cp "$release/wisp.exe" dist/Wisp.exe
-            cp LICENSE README.md dist/
+            cp "$release/wisp.exe" staging/Wisp.exe
+            pwsh -NoProfile -Command 'Compress-Archive -Path staging/* -DestinationPath dist/${{ matrix.file }}'
           else
-            # Artifacts don't keep file permissions; a tarball keeps wisp runnable.
-            mkdir staging
-            cp "$release/wisp" LICENSE README.md staging/
-            tar -czf "dist/${{ matrix.artifact }}.tar.gz" -C staging wisp LICENSE README.md
+            # A tarball keeps wisp runnable; artifacts and zips lose the permission.
+            cp "$release/wisp" staging/
+            tar -czf "dist/${{ matrix.file }}" -C staging wisp LICENSE README.md
           fi
 
-      - name: Upload (Windows)
-        if: runner.os == 'Windows'
-        uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v7
         with:
-          name: ${{ matrix.artifact }}
-          path: dist/
-          if-no-files-found: error
-
-      - name: Upload
-        if: runner.os != 'Windows'
-        uses: actions/upload-artifact@v7
-        with:
-          path: dist/${{ matrix.artifact }}.tar.gz
+          path: dist/${{ matrix.file }}
           archive: false
           if-no-files-found: error
+
+  release:
+    name: Publish the release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v8
+        with:
+          path: downloads
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          version=${TAG#v}
+          mkdir release
+          # wisp-windows-x64.zip becomes wisp-0.2.0-windows-x64.zip, and so on.
+          find downloads -type f -name 'wisp-*' | while read -r file; do
+            name=$(basename "$file")
+            cp "$file" "release/wisp-$version-${name#wisp-}"
+          done
+          test "$(ls release | wc -l)" -eq 4 || { ls -R downloads; echo "::error::Expected 4 builds"; exit 1; }
+          (cd release && sha256sum -- * > SHA256SUMS.txt)
+          # The notes are this version's section of CHANGELOG.md.
+          awk -v v="$version" '/^## / { on = ($2 == v); next } on' CHANGELOG.md > notes.md
+          test -s notes.md || { echo "::error::CHANGELOG.md has no section for $version"; exit 1; }
+          gh release create "$TAG" release/* --title "Wisp $version" --notes-file notes.md --verify-tag

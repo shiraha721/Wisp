@@ -47,6 +47,13 @@ about 25 MB of memory while it waits, and no GPU needed.
 - [Translating](docs/translating.md)
 - [Data files](docs/data-format.md)
 
+## Download
+
+Get Wisp for Windows, macOS or Linux from the
+[latest release](https://github.com/shiraha721/Wisp/releases/latest). On
+Windows, unzip it into a folder of its own and start `Wisp.exe`; the
+[user guide](docs/user-guide.md#getting-started) covers the others.
+
 ## Build
 
 You need a recent stable Rust. On Linux also `pkg-config` and the fontconfig

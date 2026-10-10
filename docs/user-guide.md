@@ -23,13 +23,20 @@ The keys below are the defaults; you can change them in Settings. On macOS,
 
 ## Getting started
 
-**Windows.** Give Wisp a folder of its own, for example `D:\Apps\Wisp\`, and
-start `Wisp.exe`. It creates a `data` folder next to itself for your notes, adds
-itself to the programs that start with Windows, and waits in the system tray.
+Download Wisp from the
+[latest release](https://github.com/shiraha721/Wisp/releases/latest), or build
+it from source (see [Development](development.md)).
 
-**macOS and Linux.** Build Wisp from source (see [Development](development.md))
-and start it. Notes go to `~/Library/Application Support/Wisp` or
-`~/.local/share/Wisp`, unless you put a `data` folder next to the program.
+**Windows.** Unzip `wisp-…-windows-x64.zip` into a folder of its own, for
+example `D:\Apps\Wisp\`, and start `Wisp.exe`. It creates a `data` folder next
+to itself for your notes, adds itself to the programs that start with Windows,
+and waits in the system tray.
+
+**macOS and Linux.** Unpack the `.tar.gz` for your system and start `wisp`. The
+macOS programs aren't signed: allow `wisp` under System Settings → Privacy &
+Security the first time (or run `xattr -d com.apple.quarantine wisp`). Notes go
+to `~/Library/Application Support/Wisp` or `~/.local/share/Wisp`, unless you put
+a `data` folder next to the program.
 
 **The first start.** Wisp first asks two things: the language to show it in,
 and the key that opens it. English is selected, and your system's language is

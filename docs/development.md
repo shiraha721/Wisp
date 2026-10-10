@@ -89,13 +89,20 @@ linker = "x86_64-w64-mingw32-gcc"
 with `v`, on pull requests, and by hand from the Actions tab. On Windows, Linux
 and macOS (Apple silicon) it runs `cargo test` and `cargo clippy` (warnings
 fail the run), then builds a release program for Windows x64, Linux x64 and
-macOS (Apple silicon and Intel). Each run's page lists them under Artifacts:
+macOS (Apple silicon and Intel). Each run's page lists them under Artifacts,
+along with any failing tests:
 
 | Artifact | Holds |
 | --- | --- |
-| `wisp-windows-x64` | `Wisp.exe`, with the license and README, zipped |
-| `wisp-linux-x64.tar.gz` | the `wisp` program, license and README |
+| `wisp-windows-x64.zip` | `Wisp.exe`, the license and the README |
+| `wisp-linux-x64.tar.gz` | the `wisp` program, the license and the README |
 | `wisp-macos-arm64.tar.gz`, `wisp-macos-x64.tar.gz` | the same for macOS |
+
+For a tag such as `v0.2.0`, a last job publishes a GitHub release `Wisp 0.2.0`
+with the four files (named `wisp-0.2.0-windows-x64.zip` and so on), a
+`SHA256SUMS.txt`, and that version's section of `CHANGELOG.md` as its notes.
+The Windows build carries its C runtime (`.cargo/config.toml`), so it needs no
+Visual C++ Redistributable.
 
 The macOS programs aren't signed or bundled as an app: run them from a
 terminal, and allow them under System Settings → Privacy & Security the first
@@ -270,13 +277,13 @@ cargo run --release --manifest-path tools/icons/Cargo.toml
 
 ## Releasing
 
-1. Update `version` in `Cargo.toml`.
+1. Update `version` in `Cargo.toml`, and add the version's section to
+   `CHANGELOG.md`: it becomes the release notes.
 2. `cargo test` and `cargo clippy --all-targets`. The tests fail if a translation
    is missing; see [Translating](translating.md).
-3. Push a tag such as `v0.2.0`; the Build workflow tests and builds every
-   system's program (see [Continuous integration](#continuous-integration)).
-4. Try each one: open, write, schedule, let a reminder ring, switch language,
-   quit and start again. Start once with an empty data folder to see the
-   welcome window.
-5. On Windows, ship `Wisp.exe` alone. It makes its `data` folder on first
-   start.
+3. Commit, then tag and push: `git tag v0.2.0 && git push origin v0.2.0`. The
+   Build workflow tests and builds every system's program and publishes the
+   release (see [Continuous integration](#continuous-integration)).
+4. Try each download: open, write, schedule, let a reminder ring, switch
+   language, quit and start again. Start once with an empty data folder to see
+   the welcome window.

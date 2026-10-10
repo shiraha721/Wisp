@@ -435,6 +435,10 @@ msgid "Nothing to undo."
 msgstr ""
 
 #: src/app.rs
+msgid "Empty the box first: {} puts the note's text back there."
+msgstr ""
+
+#: src/app.rs
 msgid "Unsaved. The text is back in the box."
 msgstr ""
 
@@ -836,10 +840,6 @@ msgstr ""
 msgid "Closes Wisp completely; the hotkey stops working until it starts again"
 msgstr ""
 
-#: src/config.rs
-msgid "Settings file has an error ({}); using defaults."
-msgstr ""
-
 #: src/dates.rs
 msgid "“next” what? Try “next fri”."
 msgstr ""
@@ -1190,6 +1190,14 @@ msgid "“{}” isn't a time of day. Try 09:00."
 msgstr ""
 
 #: src/model.rs
+msgid "Couldn't read {} ({}). It was moved to {}."
+msgstr ""
+
+#: src/model.rs
+msgid "Couldn't read {} ({}), so Wisp won't save over it. Fix or move the file, then restart Wisp."
+msgstr ""
+
+#: src/model.rs
 msgid "Starts {} ({})"
 msgstr ""
 
@@ -1203,14 +1211,6 @@ msgstr ""
 
 #: src/model.rs
 msgid "Was due {} ({})"
-msgstr ""
-
-#: src/model.rs
-msgid "Couldn't read {} ({}). It was moved to {}."
-msgstr ""
-
-#: src/model.rs
-msgid "Couldn't open {}: {}"
 msgstr ""
 
 #: src/model.rs

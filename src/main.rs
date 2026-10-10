@@ -56,6 +56,18 @@ fn main() {
     if matches!(instance, platform::Instance::Forwarded) || command == "quit" {
         return; // the running Wisp took the command (or there's nothing to quit)
     }
+    // Later launches hand their command to this one. They're answered at once, so
+    // they don't start a Wisp of their own while this one is still starting; the
+    // commands wait in `commands` until the app is up.
+    let (sender, commands) = std::sync::mpsc::channel::<String>();
+    if let platform::Instance::Primary(listener) = instance {
+        platform::serve_instance(listener, move |command| {
+            let _ = sender.send(command);
+            let _ = slint::invoke_from_event_loop(|| {
+                with_app(|app| app.run_commands());
+            });
+        });
+    }
 
     if let Err(err) = select_backend() {
         eprintln!("wisp: {err}");
@@ -113,14 +125,7 @@ fn main() {
         }
     }));
 
-    // Later launches hand their command to this one.
-    if let platform::Instance::Primary(listener) = instance {
-        platform::serve_instance(listener, |command| {
-            let _ = slint::invoke_from_event_loop(move || {
-                with_app(|app| app.remote(&command));
-            });
-        });
-    }
+    with_app(|app| app.set_commands(commands));
 
     let reminder_timer = slint::Timer::default();
     reminder_timer.start(slint::TimerMode::Repeated, Duration::from_secs(5), || {
@@ -193,6 +198,7 @@ fn wire_launcher(ui: &AppWindow) {
         slint::CloseRequestResponse::KeepWindowShown
     });
     ui.window().on_winit_window_event(|_, event| {
+        shortcuts::note_key_event(event);
         match event {
             winit::event::WindowEvent::Focused(true) => app::later(|app| app.focus_gained()),
             winit::event::WindowEvent::Focused(false) => {
@@ -226,6 +232,10 @@ fn wire_settings(settings: &SettingsWindow) {
     settings.window().on_close_requested(|| {
         app::later(|app| app.settings_closed());
         slint::CloseRequestResponse::HideWindow
+    });
+    settings.window().on_winit_window_event(|_, event| {
+        shortcuts::note_key_event(event);
+        EventResult::Propagate
     });
 }
 

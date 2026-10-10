@@ -92,9 +92,10 @@ impl Rule {
     fn moment(&self, start: Option<i64>, due: Option<i64>) -> Option<i64> {
         match *self {
             Rule::AtStart => start,
-            Rule::BeforeStart { minutes } => start.map(|s| s - minutes * 60),
-            Rule::AfterStart { minutes } => start.map(|s| s + minutes * 60),
-            Rule::BeforeDue { minutes } => due.map(|d| d - minutes * 60),
+            // Saturating: an absurd offset ("99999999w") only makes a moment that never comes.
+            Rule::BeforeStart { minutes } => start.map(|s| s.saturating_sub(minutes.saturating_mul(60))),
+            Rule::AfterStart { minutes } => start.map(|s| s.saturating_add(minutes.saturating_mul(60))),
+            Rule::BeforeDue { minutes } => due.map(|d| d.saturating_sub(minutes.saturating_mul(60))),
             Rule::AtDue => due,
             Rule::Daily { .. } => None,
         }
@@ -149,7 +150,12 @@ impl<'a, Tz: TimeZone> Daily<'a, Tz> {
         };
         let mut daily = Daily { tz, time, first: 0 };
         let on_start_day = daily.on(start_local.date());
-        daily.first = if on_start_day >= start { on_start_day } else { on_start_day + 86_400 };
+        daily.first = match start_local.date().succ_opt() {
+            _ if on_start_day >= start => on_start_day,
+            // The same time on the next day, which isn't 24 hours later across a clock change.
+            Some(next_day) => daily.on(next_day),
+            None => on_start_day,
+        };
         daily
     }
 
@@ -227,6 +233,9 @@ pub fn take_category(categories: &[Category], text: &str) -> (Option<u64>, Strin
                     None => kept.push(word),
                 }
             }
+            if kept.len() == line.split(' ').count() {
+                return line.to_owned(); // no category here: the line stays exactly as typed
+            }
             // Removing a word mid-line leaves two spaces; keep the line's own indentation.
             let joined = kept.join(" ");
             let body = joined.trim_start();
@@ -236,6 +245,28 @@ pub fn take_category(categories: &[Category], text: &str) -> (Option<u64>, Strin
         })
         .collect();
     (found, lines.join("\n"))
+}
+
+/// Reads a JSON file Wisp wrote: `Ok(None)` if there's none yet. A file that can't
+/// be read is moved aside; the error says what happened, and whether the file is
+/// still in place (so it mustn't be overwritten).
+pub fn read_json<T: serde::de::DeserializeOwned>(path: &Path) -> Result<Option<T>, (String, bool)> {
+    let problem = match std::fs::read(path) {
+        Err(err) if err.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Err(err) => err.to_string(),
+        Ok(bytes) => {
+            // Notepad and friends may start the file with a byte-order mark.
+            let bytes = bytes.strip_prefix("\u{feff}".as_bytes()).unwrap_or(&bytes);
+            match serde_json::from_slice(bytes) {
+                Ok(value) => return Ok(Some(value)),
+                Err(err) => err.to_string(),
+            }
+        }
+    };
+    match crate::platform::move_aside(path) {
+        Ok(backup) => Err((tr!("Couldn't read {} ({}). It was moved to {}.", path.display(), problem, backup.display()), false)),
+        Err(_) => Err((tr!("Couldn't read {} ({}), so Wisp won't save over it. Fix or move the file, then restart Wisp.", path.display(), problem), true)),
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -388,30 +419,21 @@ pub struct Data {
 pub struct Store {
     path: PathBuf,
     pub data: Data,
+    /// Why saving is off: the notes file is there but couldn't be read, and
+    /// mustn't be overwritten.
+    blocked: Option<String>,
 }
 
 impl Store {
-    /// Loads the store, or starts empty. A file that can't be read is moved aside
-    /// (never overwritten) and the returned warning says where it went.
+    /// Loads the store, or starts empty. A file that can't be read is never
+    /// overwritten: it's moved aside, or if even that fails, saving stays off.
+    /// The returned warning says which.
     pub fn load(path: &Path) -> (Store, Option<String>) {
-        let mut warning = None;
-        let data = match std::fs::read_to_string(path) {
-            Ok(text) => match serde_json::from_str::<Data>(&text) {
-                Ok(data) => data,
-                Err(err) => {
-                    let backup = path.with_extension(format!("broken-{}.json", chrono::Local::now().format("%Y%m%d-%H%M%S")));
-                    let _ = std::fs::rename(path, &backup);
-                    warning = Some(tr!("Couldn't read {} ({}). It was moved to {}.", path.display(), err, backup.display()));
-                    Data::default()
-                }
-            },
-            Err(err) if err.kind() == std::io::ErrorKind::NotFound => Data::default(),
-            Err(err) => {
-                warning = Some(tr!("Couldn't open {}: {}", path.display(), err));
-                Data::default()
-            }
+        let (data, warning, blocked) = match read_json::<Data>(path) {
+            Ok(data) => (data.unwrap_or_default(), None, None),
+            Err((warning, in_place)) => (Data::default(), Some(warning.clone()), in_place.then_some(warning)),
         };
-        let mut store = Store { path: path.to_owned(), data };
+        let mut store = Store { path: path.to_owned(), data, blocked };
         // Before notes had their own field, everything after the first line was the notes.
         for item in &mut store.data.items {
             if item.notes.is_empty() && item.text.trim().contains('\n') {
@@ -431,6 +453,9 @@ impl Store {
 
     /// Writes atomically: a crash mid-save leaves the previous file intact.
     pub fn save(&self) -> Result<(), String> {
+        if let Some(reason) = &self.blocked {
+            return Err(reason.clone());
+        }
         let json = serde_json::to_string_pretty(&self.data).map_err(|e| e.to_string())?;
         if let Some(dir) = self.path.parent() {
             std::fs::create_dir_all(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
@@ -527,11 +552,16 @@ impl Store {
         true
     }
 
+    /// The colour a new category gets: the first one not in use yet.
+    pub fn next_color(&self) -> u8 {
+        let used: Vec<u8> = self.categories().iter().map(|c| c.color).collect();
+        (0..CATEGORY_COLORS).find(|c| !used.contains(c)).unwrap_or((used.len() % usize::from(CATEGORY_COLORS)) as u8)
+    }
+
     /// Adds a category with the next unused colour.
     pub fn add_category(&mut self, name: &str) -> Result<u64, String> {
         let name = self.check_name(name, None)?;
-        let used: Vec<u8> = self.categories().iter().map(|c| c.color).collect();
-        let color = (0..CATEGORY_COLORS).find(|c| !used.contains(c)).unwrap_or(used.len() as u8 % CATEGORY_COLORS);
+        let color = self.next_color();
         let id = self.fresh_id();
         self.data.categories.get_or_insert_with(Vec::new).push(Category { id, name, color });
         Ok(id)
@@ -731,7 +761,7 @@ mod tests {
 
     #[test]
     fn categories_are_named_with_hash_words() {
-        let mut store = Store { path: PathBuf::new(), data: Data::default() };
+        let mut store = Store { path: PathBuf::new(), data: Data::default(), blocked: None };
         assert!(store.seed_categories(&["Daily", "Work", "School"]));
         assert!(!store.seed_categories(&["Again"]), "only once per file");
         let ids: Vec<u64> = store.categories().iter().map(|c| c.id).collect();
@@ -748,6 +778,8 @@ mod tests {
         assert_eq!(take_category(cats, "Fix issue #42 today"), (None, "Fix issue #42 today".into()), "not a category");
         assert_eq!(take_category(cats, "plan ＃side-project, then rest"), (Some(side), "plan then rest".into()));
         assert_eq!(take_category(cats, "#sideproject").0, Some(side));
+        let table = "Shopping #daily\nname   qty\nmilk   2";
+        assert_eq!(take_category(cats, table), (Some(daily), "Shopping\nname   qty\nmilk   2".into()), "other lines stay as typed");
         assert_eq!(find_category(cats, "s").map(|c| c.id), Some(ids[2]), "the first one it begins wins");
 
         assert!(store.add_category("work").is_err(), "names are unique, ignoring case");
@@ -768,7 +800,7 @@ mod tests {
 
     #[test]
     fn first_categories_follow_a_new_language() {
-        let mut store = Store { path: PathBuf::new(), data: Data::default() };
+        let mut store = Store { path: PathBuf::new(), data: Data::default(), blocked: None };
         store.seed_categories(&["Daily", "Work", "School"]);
         let names = |s: &Store| s.categories().iter().map(|c| c.name.clone()).collect::<Vec<_>>();
         assert!(store.rename_seeded(&["Daily", "Work", "School"], &["日常", "仕事", "学校"]));
@@ -812,6 +844,31 @@ mod tests {
         assert!(fresh.data.items.is_empty());
         assert!(warn.unwrap().contains("moved"));
         assert!(!path.exists(), "broken file is moved aside, not overwritten");
+
+        // Bytes that aren't UTF-8 go aside too; a byte-order mark is fine.
+        std::fs::write(&path, [0xff, 0xfe, b'{']).unwrap();
+        assert!(Store::load(&path).1.unwrap().contains("moved"));
+        assert!(!path.exists());
+        std::fs::write(&path, "\u{feff}{\"items\":[{\"id\":3,\"text\":\"bom\",\"created\":1}]}").unwrap();
+        let (bom, warn) = Store::load(&path);
+        assert!(warn.is_none());
+        assert_eq!(bom.data.items[0].text, "bom");
+
+        // A file that can't be moved aside either is kept: saving stays off.
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::write(&path, "{ not json").unwrap();
+            std::fs::set_permissions(&dir, std::fs::Permissions::from_mode(0o555)).unwrap();
+            let (stuck, warn) = Store::load(&path);
+            std::fs::set_permissions(&dir, std::fs::Permissions::from_mode(0o755)).unwrap();
+            // (Skipped where permissions don't apply, as for root.)
+            if path.exists() {
+                assert!(warn.unwrap().contains("won't save over it"));
+                assert!(stuck.save().is_err());
+                assert_eq!(std::fs::read_to_string(&path).unwrap(), "{ not json");
+            }
+        }
         let _ = std::fs::remove_dir_all(&dir);
     }
 }

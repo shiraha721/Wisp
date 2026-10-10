@@ -285,11 +285,15 @@ Settings → About shows the folder in use and opens it.
 
 **Backups.** Copy the data folder. Wisp writes both files whole each time (to a
 temporary file first, then renamed), so a crash never leaves half a file. If
-`notes.json` can't be read, Wisp moves it aside as
-`notes.broken-<date>.json` instead of overwriting it, and tells you.
+`notes.json` or `settings.json` can't be read, Wisp never writes over it: it
+moves the file aside as `notes.broken-<date>.json` (or `settings.broken-…`)
+and tells you. If even that fails (the file is locked, say), Wisp doesn't save
+at all until you restart it.
 
 **Moving Wisp.** Quit Wisp, move its whole folder, and start it from the new
-place. If it starts with the computer, it updates that entry itself.
+place. If it starts with the computer, it updates that entry itself. If you
+switch that off outside Wisp (in Task Manager's Startup apps, say), Wisp leaves
+it off and turns off its own setting to match.
 
 **Editing the files.** Quit Wisp first, or it may write over your changes. The
 format is described in [Data files](data-format.md).

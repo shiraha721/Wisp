@@ -67,6 +67,15 @@ fn portable_dir(exe_dir: &Path, user_dir: &Path, create: bool) -> Option<DataDir
     Some(DataDir { path: dir, portable: true, copied_from })
 }
 
+/// Moves a file Wisp can't read out of the way, next to where it was
+/// ("notes.broken-20261010-071500.json"), and returns where it went.
+pub fn move_aside(path: &Path) -> std::io::Result<PathBuf> {
+    let stamp = chrono::Local::now().format("%Y%m%d-%H%M%S");
+    let backup = path.with_extension(format!("broken-{stamp}.json"));
+    std::fs::rename(path, &backup)?;
+    Ok(backup)
+}
+
 // ---------------------------------------------------------------------------
 // Starting with the computer
 
@@ -95,6 +104,20 @@ pub fn set_autostart(enabled: bool) -> Result<(), String> {
     } else {
         Ok(())
     }
+}
+
+/// Whether Wisp still starts with the computer. If it does, the entry is pointed
+/// at this program again, in case it moved. One that was switched off outside
+/// Wisp (Task Manager's Startup apps, the login items) stays off.
+pub fn refresh_autostart() -> Result<bool, String> {
+    if !auto_launch()?.is_enabled().map_err(|e| e.to_string())? {
+        return Ok(false);
+    }
+    // A debug build would take the entry over from the installed Wisp.
+    if !cfg!(debug_assertions) {
+        set_autostart(true)?;
+    }
+    Ok(true)
 }
 
 // ---------------------------------------------------------------------------
@@ -208,9 +231,14 @@ pub enum Instance {
 }
 
 fn instance_addr(data_dir: &Path) -> SocketAddr {
+    // One folder, one port, however its path was written: relative, through a
+    // link, or (on Windows) in other letter case.
+    let path = std::fs::canonicalize(data_dir).or_else(|_| std::path::absolute(data_dir)).unwrap_or_else(|_| data_dir.to_owned());
+    let path = path.to_string_lossy();
+    let path = if cfg!(windows) { path.to_lowercase() } else { path.into_owned() };
     // FNV-1a: stable across builds, unlike std's hasher.
     let mut hash: u32 = 0x811c_9dc5;
-    for b in data_dir.to_string_lossy().bytes() {
+    for b in path.bytes() {
         hash ^= u32::from(b);
         hash = hash.wrapping_mul(0x0100_0193);
     }
@@ -218,13 +246,17 @@ fn instance_addr(data_dir: &Path) -> SocketAddr {
 }
 
 pub fn claim_instance(data_dir: &Path, command: &str) -> Instance {
+    // An existing folder resolves to the same path every time (see `instance_addr`).
+    let _ = std::fs::create_dir_all(data_dir);
     let addr = instance_addr(data_dir);
     if let Ok(listener) = TcpListener::bind(addr) {
         return Instance::Primary(listener);
     }
     let handed_over = (|| -> std::io::Result<bool> {
         let mut stream = TcpStream::connect_timeout(&addr, Duration::from_millis(400))?;
-        stream.set_read_timeout(Some(Duration::from_millis(800)))?;
+        // The running Wisp answers as soon as it has claimed the port (see
+        // `serve_instance`); allow for a slow start all the same.
+        stream.set_read_timeout(Some(Duration::from_secs(5)))?;
         writeln!(stream, "{MAGIC} {command}")?;
         let mut reply = String::new();
         BufReader::new(stream).read_line(&mut reply)?;
@@ -237,7 +269,9 @@ pub fn claim_instance(data_dir: &Path, command: &str) -> Instance {
     }
 }
 
-/// Serves commands from later launches on a background thread.
+/// Serves commands from later launches on a background thread. Call it right
+/// after claiming the port: later launches get their answer at once, even while
+/// this Wisp is still starting, and `on_command` takes it from there.
 pub fn serve_instance(listener: TcpListener, on_command: impl Fn(String) + Send + 'static) {
     std::thread::spawn(move || {
         for stream in listener.incoming().flatten() {

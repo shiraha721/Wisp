@@ -57,7 +57,7 @@ Typing `#name` in the box shows only that category, and saves new notes there.
 | `Ctrl+T` ✎ | Next category (`Ctrl+Shift+T`: previous). |
 | `Ctrl+R` ✎ | Add a reminder. |
 | `Ctrl+Shift+R` ✎ | Remove the reminder you're on, or the last one. |
-| `Ctrl+Delete` ✎ | Delete the note. |
+| `Ctrl+Delete` ✎ | Delete the note (saved first, so `Ctrl+Z` brings it back as you left it). In a text field, `Ctrl+Delete` and `Ctrl+Backspace` delete a word instead. |
 | `Ctrl+Z` | Undo typing in the field you're in. |
 
 On the category row:

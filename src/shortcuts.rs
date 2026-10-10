@@ -7,8 +7,39 @@
 
 use crate::i18n;
 use global_hotkey::hotkey::{Code, HotKey, Modifiers};
+use slint::winit_030::winit;
+use std::cell::Cell;
 use std::fmt;
 use std::str::FromStr;
+
+thread_local! {
+    /// The key of the press being handled, by its place on a US keyboard ('D', '1').
+    static PHYSICAL: Cell<Option<char>> = const { Cell::new(None) };
+}
+
+/// Notes which key a press comes from. Every window passes its key events here
+/// before Slint hands them on (see [`Combo::from_event`]).
+pub fn note_key_event(event: &winit::event::WindowEvent) {
+    if let winit::event::WindowEvent::KeyboardInput { event, .. } = event {
+        if event.state.is_pressed() {
+            note_physical_key(us_key(event.physical_key));
+        }
+    }
+}
+
+fn note_physical_key(key: Option<char>) {
+    PHYSICAL.with(|p| p.set(key));
+}
+
+/// The letter or digit at that place on a US keyboard.
+fn us_key(key: winit::keyboard::PhysicalKey) -> Option<char> {
+    let winit::keyboard::PhysicalKey::Code(code) = key else { return None };
+    // The variants are named "KeyA"…"KeyZ" and "Digit0"…"Digit9".
+    let name = format!("{code:?}");
+    let rest = name.strip_prefix("Key").or_else(|| name.strip_prefix("Digit"))?;
+    let mut chars = rest.chars();
+    chars.next().filter(|_| chars.next().is_none())
+}
 
 #[derive(Clone, Debug, PartialEq, Eq, Default, Hash)]
 pub struct Combo {
@@ -29,6 +60,18 @@ impl Combo {
         if chars.next().is_some() {
             return None;
         }
+        // Shortcuts go by the key, not what the layout makes of it: with a Russian or
+        // Greek layout Ctrl+D arrives as "Ctrl+в", and on AZERTY Ctrl+1 as "Ctrl+&".
+        // (Latin layouts keep their letters, so Ctrl+Z is the key labelled Z.)
+        let c = match PHYSICAL.with(Cell::get) {
+            Some(p) if (ctrl || alt || meta)
+                && ((p.is_ascii_alphabetic() && c.is_alphabetic() && !c.is_ascii())
+                    || (p.is_ascii_digit() && !shift && !c.is_ascii_digit() && !c.is_control())) =>
+            {
+                p
+            }
+            _ => c,
+        };
         let key = key_from_char(c, shift)?;
         Some(Combo { ctrl, alt, shift, meta, key })
     }
@@ -367,6 +410,20 @@ mod tests {
         assert!(c("Ctrl+Alt+Shift+N").validate_global().is_ok());
         assert!(c("Super+Space").validate_global().is_ok());
         assert!(c("Shift+N").validate_global().is_err());
+    }
+
+    #[test]
+    fn keys_of_other_layouts() {
+        let key = |text: &str, physical: char, ctrl: bool| {
+            note_physical_key(Some(physical));
+            Combo::from_event(text, ctrl, false, false, false).map(|c| c.to_string())
+        };
+        assert_eq!(key("в", 'D', true).as_deref(), Some("Ctrl+D"), "Russian layout");
+        assert_eq!(key("&", '1', true).as_deref(), Some("Ctrl+1"), "AZERTY");
+        assert_eq!(key("z", 'Y', true).as_deref(), Some("Ctrl+Z"), "QWERTZ keeps its letters");
+        assert_eq!(key("в", 'D', false).as_deref(), Some("В"), "typing stays typing");
+        note_physical_key(None);
+        assert_eq!(Combo::from_event("в", true, false, false, false).unwrap().to_string(), "Ctrl+В");
     }
 
     #[test]

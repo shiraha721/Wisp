@@ -58,6 +58,10 @@ impl App {
                 later(|app| app.finish_welcome());
                 slint::CloseRequestResponse::HideWindow
             });
+            window.window().on_winit_window_event(|_, event| {
+                crate::shortcuts::note_key_event(event);
+                slint::winit_030::EventResult::Propagate
+            });
             self.welcome = Some(Welcome { window, zone: LANGUAGE, message: None });
             self.apply_config_to_ui();
         }
@@ -204,8 +208,7 @@ impl App {
             "Up" | "Down" if bare => self.welcome_zone(zone + if key == "Up" { -1 } else { 1 }),
             "Left" | "Right" if bare => {}
             "Backspace" | "Delete" if bare && zone == HOTKEY => {
-                self.config.summon.clear();
-                self.claim_summon();
+                self.reset_summon();
                 self.save_config();
                 self.apply_config_to_ui();
                 let message = (self.summon_problem.is_none()).then(|| (tr!("{} now opens Wisp from anywhere.", self.summon_keys().label()), false));

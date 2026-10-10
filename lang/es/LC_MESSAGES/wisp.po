@@ -435,6 +435,10 @@ msgid "Nothing to undo."
 msgstr "Nada que deshacer."
 
 #: src/app.rs
+msgid "Empty the box first: {} puts the note's text back there."
+msgstr "Vacía primero el cuadro: {} devolverá allí el texto de la nota."
+
+#: src/app.rs
 msgid "Unsaved. The text is back in the box."
 msgstr "Deshecho. El texto vuelve a estar en el cuadro."
 
@@ -836,10 +840,6 @@ msgstr "Salir de Wisp"
 msgid "Closes Wisp completely; the hotkey stops working until it starts again"
 msgstr "Cierra Wisp por completo; el atajo deja de funcionar hasta que vuelva a iniciarse"
 
-#: src/config.rs
-msgid "Settings file has an error ({}); using defaults."
-msgstr "El archivo de ajustes tiene un error ({}); se usan los valores predeterminados."
-
 #: src/dates.rs
 msgid "“next” what? Try “next fri”."
 msgstr "¿«próximo» qué? Prueba «el próximo viernes»."
@@ -1190,6 +1190,14 @@ msgid "“{}” isn't a time of day. Try 09:00."
 msgstr "«{}» no es una hora del día. Prueba 09:00."
 
 #: src/model.rs
+msgid "Couldn't read {} ({}). It was moved to {}."
+msgstr "No se pudo leer {} ({}). Se movió a {}."
+
+#: src/model.rs
+msgid "Couldn't read {} ({}), so Wisp won't save over it. Fix or move the file, then restart Wisp."
+msgstr "No se pudo leer {} ({}), así que Wisp no guardará encima. Corrige o mueve el archivo y vuelve a abrir Wisp."
+
+#: src/model.rs
 msgid "Starts {} ({})"
 msgstr "Empieza {} ({})"
 
@@ -1204,14 +1212,6 @@ msgstr "Vence {} ({})"
 #: src/model.rs
 msgid "Was due {} ({})"
 msgstr "Venció {} ({})"
-
-#: src/model.rs
-msgid "Couldn't read {} ({}). It was moved to {}."
-msgstr "No se pudo leer {} ({}). Se movió a {}."
-
-#: src/model.rs
-msgid "Couldn't open {}: {}"
-msgstr "No se pudo abrir {}: {}"
 
 #: src/model.rs
 msgid "Give it a name."

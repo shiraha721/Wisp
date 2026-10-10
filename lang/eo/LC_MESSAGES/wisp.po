@@ -435,6 +435,10 @@ msgid "Nothing to undo."
 msgstr "Nenio por malfari."
 
 #: src/app.rs
+msgid "Empty the box first: {} puts the note's text back there."
+msgstr "Unue malplenigu la skatolon: {} remetos tien la tekston de la noto."
+
+#: src/app.rs
 msgid "Unsaved. The text is back in the box."
 msgstr "Malfarita. La teksto revenis en la skatolon."
 
@@ -836,10 +840,6 @@ msgstr "Ĉesigi Wisp"
 msgid "Closes Wisp completely; the hotkey stops working until it starts again"
 msgstr "Tute fermas Wisp; la klavkombino ne funkcias ĝis ĝi denove startas"
 
-#: src/config.rs
-msgid "Settings file has an error ({}); using defaults."
-msgstr "La agorda dosiero havas eraron ({}); uziĝas la defaŭltoj."
-
 #: src/dates.rs
 msgid "“next” what? Try “next fri”."
 msgstr "„venonta“ kio? Provu „venontan vendredon“."
@@ -1190,6 +1190,14 @@ msgid "“{}” isn't a time of day. Try 09:00."
 msgstr "„{}“ ne estas horo. Provu 09:00."
 
 #: src/model.rs
+msgid "Couldn't read {} ({}). It was moved to {}."
+msgstr "Ne eblis legi {} ({}). Ĝi estis movita al {}."
+
+#: src/model.rs
+msgid "Couldn't read {} ({}), so Wisp won't save over it. Fix or move the file, then restart Wisp."
+msgstr "Ne eblis legi {} ({}), do Wisp ne konservos super ĝi. Riparu aŭ movu la dosieron, poste rekomencu Wisp."
+
+#: src/model.rs
 msgid "Starts {} ({})"
 msgstr "Komenciĝas {} ({})"
 
@@ -1204,14 +1212,6 @@ msgstr "Limdato {} ({})"
 #: src/model.rs
 msgid "Was due {} ({})"
 msgstr "Limdato estis {} ({})"
-
-#: src/model.rs
-msgid "Couldn't read {} ({}). It was moved to {}."
-msgstr "Ne eblis legi {} ({}). Ĝi estis movita al {}."
-
-#: src/model.rs
-msgid "Couldn't open {}: {}"
-msgstr "Ne eblis malfermi {}: {}"
 
 #: src/model.rs
 msgid "Give it a name."

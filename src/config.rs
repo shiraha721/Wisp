@@ -193,6 +193,9 @@ pub struct Config {
     pub language: String,
     /// Set after the first start, when autostart is switched on.
     pub initialized: bool,
+    /// The settings file is there but couldn't be read: don't save over it.
+    #[serde(skip)]
+    blocked: Option<String>,
 }
 
 impl Default for Config {
@@ -207,23 +210,28 @@ impl Default for Config {
             theme: Theme::System,
             language: "en".into(),
             initialized: false,
+            blocked: None,
         }
     }
 }
 
 impl Config {
+    /// Loads the settings, or the defaults when there are none yet. A file that
+    /// can't be read is moved aside (or, failing that, never saved over), and the
+    /// defaults stand in without counting as a first start.
     pub fn load(path: &Path) -> (Config, Option<String>) {
-        match std::fs::read_to_string(path) {
-            Ok(text) => match serde_json::from_str::<Config>(&text) {
-                Ok(mut cfg) => {
-                    if cfg.upgrade() {
-                        let _ = cfg.save(path);
-                    }
-                    (cfg, None)
+        match crate::model::read_json::<Config>(path) {
+            Ok(Some(mut cfg)) => {
+                if cfg.upgrade() {
+                    let _ = cfg.save(path);
                 }
-                Err(err) => (Config::default(), Some(tr!("Settings file has an error ({}); using defaults.", err))),
-            },
-            Err(_) => (Config::default(), None),
+                (cfg, None)
+            }
+            Ok(None) => (Config::default(), None),
+            Err((warning, in_place)) => {
+                let cfg = Config { initialized: true, blocked: in_place.then(|| warning.clone()), ..Config::default() };
+                (cfg, Some(warning))
+            }
         }
     }
 
@@ -242,6 +250,9 @@ impl Config {
     }
 
     pub fn save(&self, path: &Path) -> Result<(), String> {
+        if let Some(reason) = &self.blocked {
+            return Err(reason.clone());
+        }
         let json = serde_json::to_string_pretty(self).map_err(|e| e.to_string())?;
         if let Some(dir) = path.parent() {
             std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;

@@ -434,6 +434,10 @@ msgid "Nothing to undo."
 msgstr "되돌릴 작업이 없습니다."
 
 #: src/app.rs
+msgid "Empty the box first: {} puts the note's text back there."
+msgstr "먼저 입력란을 비우세요. {}(으)로 메모의 글이 그곳에 돌아옵니다."
+
+#: src/app.rs
 msgid "Unsaved. The text is back in the box."
 msgstr "저장을 취소했습니다. 글은 입력란으로 돌아왔습니다."
 
@@ -835,10 +839,6 @@ msgstr "Wisp 종료"
 msgid "Closes Wisp completely; the hotkey stops working until it starts again"
 msgstr "Wisp를 완전히 닫습니다. 다시 시작할 때까지 단축키가 작동하지 않습니다"
 
-#: src/config.rs
-msgid "Settings file has an error ({}); using defaults."
-msgstr "설정 파일에 오류가 있어({}) 기본값을 씁니다."
-
 #: src/dates.rs
 msgid "“next” what? Try “next fri”."
 msgstr "“다음” 무엇인가요? “다음 주 금요일”처럼 입력하세요."
@@ -1188,6 +1188,14 @@ msgid "“{}” isn't a time of day. Try 09:00."
 msgstr "“{}”은(는) 시각이 아닙니다. 09:00처럼 입력하세요."
 
 #: src/model.rs
+msgid "Couldn't read {} ({}). It was moved to {}."
+msgstr "{}을(를) 읽지 못했습니다({}). {}(으)로 옮겼습니다."
+
+#: src/model.rs
+msgid "Couldn't read {} ({}), so Wisp won't save over it. Fix or move the file, then restart Wisp."
+msgstr "{}을(를) 읽지 못해서({}) Wisp가 덮어쓰지 않습니다. 파일을 고치거나 옮긴 뒤 Wisp를 다시 시작하세요."
+
+#: src/model.rs
 msgid "Starts {} ({})"
 msgstr "시작 {}({})"
 
@@ -1202,14 +1210,6 @@ msgstr "마감 {}({})"
 #: src/model.rs
 msgid "Was due {} ({})"
 msgstr "마감 지남 {}({})"
-
-#: src/model.rs
-msgid "Couldn't read {} ({}). It was moved to {}."
-msgstr "{}을(를) 읽지 못했습니다({}). {}(으)로 옮겼습니다."
-
-#: src/model.rs
-msgid "Couldn't open {}: {}"
-msgstr "{}을(를) 열지 못했습니다: {}"
 
 #: src/model.rs
 msgid "Give it a name."

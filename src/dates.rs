@@ -39,7 +39,9 @@ pub fn parse<Tz: TimeZone>(
     let now_local = truncate_to_minute(now.naive_local());
     let now_exact = now.naive_local();
     // "+30m" means at least 30 minutes from now: round up to the next whole minute.
-    let from_now = |minutes: i64| ceil_to_minute(now_exact + Duration::minutes(minutes));
+    // `None` for amounts too far out to be a date.
+    let from_now =
+        |minutes: i64| Duration::try_minutes(minutes).and_then(|d| now_exact.checked_add_signed(d)).and_then(ceil_to_minute);
     let today = now_local.date();
 
     let mut date: Option<NaiveDate> = None;
@@ -89,7 +91,7 @@ pub fn parse<Tz: TimeZone>(
                 let (minutes, used) = duration_tokens(n, unit)
                     .or_else(|| n.parse::<i64>().ok().map(|m| (m, 1)))
                     .ok_or_else(|| tr!("Couldn't read “in {}”.", n))?;
-                relative = Some(from_now(minutes));
+                relative = Some(from_now(minutes).ok_or_else(|| tr!("Couldn't read “in {}”.", n))?);
                 consumed = 1 + used;
             }
             _ => {
@@ -113,11 +115,11 @@ pub fn parse<Tz: TimeZone>(
                 } else if tok.starts_with('+') || has_unit_suffix(tok) {
                     let rest = tok.trim_start_matches('+');
                     let (minutes, used) = duration_tokens(rest, next).ok_or_else(|| tr!("Couldn't read “{}”.", tok))?;
-                    relative = Some(from_now(minutes));
+                    relative = Some(from_now(minutes).ok_or_else(|| tr!("Couldn't read “{}”.", tok))?);
                     consumed = used;
                 } else if let Some((minutes, 2)) = duration_tokens(tok, next) {
                     // "30 minutes", "2 hours"
-                    relative = Some(from_now(minutes));
+                    relative = Some(from_now(minutes).ok_or_else(|| tr!("Couldn't read “{}”.", tok))?);
                     consumed = 2;
                 } else if let Some((t, used)) = clock(tok, next, meridiem_prefix.take()) {
                     time = Some(t);
@@ -414,9 +416,9 @@ fn truncate_to_minute(t: NaiveDateTime) -> NaiveDateTime {
     t.with_second(0).and_then(|t| t.with_nanosecond(0)).unwrap_or(t)
 }
 
-fn ceil_to_minute(t: NaiveDateTime) -> NaiveDateTime {
+fn ceil_to_minute(t: NaiveDateTime) -> Option<NaiveDateTime> {
     let floor = truncate_to_minute(t);
-    if floor == t { t } else { floor + Duration::minutes(1) }
+    if floor == t { Some(t) } else { floor.checked_add_signed(Duration::minutes(1)) }
 }
 
 /// A time of day from `tok` (and maybe an "am"/"pm" in `next`). Returns the time and
@@ -433,7 +435,10 @@ fn clock(tok: &str, next: Option<&str>, prefix: Option<Meridiem>) -> Option<(Nai
     let (h, m) = match body.split_once(':') {
         Some((h, m)) => (h.parse::<u32>().ok()?, m.parse::<u32>().ok()?),
         None if !body.is_empty() && body.len() <= 2 => (body.parse::<u32>().ok()?, 0),
-        None if body.len() == 4 && suffix.is_some() => (body[..2].parse().ok()?, body[2..].parse().ok()?),
+        // "1430pm"; only digits, so the halves split on character boundaries.
+        None if body.len() == 4 && body.bytes().all(|b| b.is_ascii_digit()) && suffix.is_some() => {
+            (body[..2].parse().ok()?, body[2..].parse().ok()?)
+        }
         None => return None,
     };
     if m > 59 {
@@ -885,6 +890,10 @@ mod tests {
         assert!(p("25:00").starts_with("err"));
         assert!(p("2026-02-30").starts_with("err"));
         assert!(p("next blah").starts_with("err"));
+        // Amounts past any date, and times with other characters in them, are errors, not crashes.
+        for input in ["in 999999999999", "+99999999w", "999999999999 days", "1天p", "1월p", "5月a", "1°0pm"] {
+            assert!(p(input).starts_with("err"), "{input}: {}", p(input));
+        }
     }
 
     #[test]

@@ -109,6 +109,10 @@ pub struct App {
     tray: Option<crate::Tray>,
     /// No settings were saved before this start: the welcome window comes first.
     first_run: bool,
+    /// Commands from later launches ("show", "toggle", …), see `run_commands`.
+    commands: Option<std::sync::mpsc::Receiver<String>>,
+    /// `start` has run; commands from later launches wait until then.
+    started: bool,
     welcome: Option<welcome::Welcome>,
 }
 
@@ -136,11 +140,21 @@ impl App {
             // Turn on "start with the computer" once, for release builds.
             config.launch_at_startup = !cfg!(debug_assertions);
             config.initialized = true;
+            if config.launch_at_startup {
+                if let Err(err) = platform::set_autostart(true) {
+                    eprintln!("wisp: couldn't register autostart: {err}");
+                }
+            }
             let _ = config.save(&config_path);
-        }
-        if config.launch_at_startup {
-            if let Err(err) = platform::set_autostart(true) {
-                eprintln!("wisp: couldn't register autostart: {err}");
+        } else if config.launch_at_startup {
+            // Switched off outside Wisp (say, in Task Manager)? Then it's off here too.
+            match platform::refresh_autostart() {
+                Ok(true) => {}
+                Ok(false) => {
+                    config.launch_at_startup = false;
+                    let _ = config.save(&config_path);
+                }
+                Err(err) => eprintln!("wisp: couldn't check autostart: {err}"),
             }
         }
 
@@ -178,6 +192,8 @@ impl App {
             last_minute: 0,
             tray: None,
             first_run,
+            commands: None,
+            started: false,
             welcome: None,
         };
 
@@ -376,10 +392,27 @@ impl App {
     /// Carries out the command Wisp was started with, after the welcome window
     /// the first time.
     pub fn start(&mut self, command: &str) {
+        self.started = true;
         if self.first_run {
             self.open_welcome();
         } else {
             self.remote(command);
+        }
+        self.run_commands();
+    }
+
+    pub fn set_commands(&mut self, commands: std::sync::mpsc::Receiver<String>) {
+        self.commands = Some(commands);
+    }
+
+    /// Carries out the commands later launches sent.
+    pub fn run_commands(&mut self) {
+        if !self.started {
+            return;
+        }
+        let pending: Vec<String> = self.commands.as_ref().map(|c| c.try_iter().collect()).unwrap_or_default();
+        for command in pending {
+            self.remote(&command);
         }
     }
 
@@ -789,16 +822,20 @@ impl App {
         };
         let restored = match step {
             UndoStep::Created(id) => {
+                // The note's words go back in the box (a lone category word there doesn't count).
+                let ui = self.ui();
+                if !model::take_category(self.store.categories(), &ui.get_query()).1.trim().is_empty() {
+                    // Something else is being typed: unsaving now would lose one or the other.
+                    self.undo.push(UndoStep::Created(id));
+                    self.toast(tr!("Empty the box first: {} puts the note's text back there.", self.label(Action::Undo)), false);
+                    return;
+                }
                 if let Some((_, item)) = self.store.remove(id) {
-                    // Put the words back where they were typed (a lone category word doesn't count).
-                    let ui = self.ui();
-                    if model::take_category(self.store.categories(), &ui.get_query()).1.trim().is_empty() {
-                        let mut text = if item.notes.is_empty() { item.text } else { format!("{}\n{}", item.text, item.notes) };
-                        if let Some(c) = item.category.and_then(|c| self.store.category(c)) {
-                            text = format!("{text} {}", c.token());
-                        }
-                        ui.set_query(text.into());
+                    let mut text = if item.notes.is_empty() { item.text } else { format!("{}\n{}", item.text, item.notes) };
+                    if let Some(c) = item.category.and_then(|c| self.store.category(c)) {
+                        text = format!("{text} {}", c.token());
                     }
+                    ui.set_query(text.into());
                 }
                 self.toast(tr!("Unsaved. The text is back in the box."), false);
                 None
@@ -809,8 +846,11 @@ impl App {
                 self.toast(tr!("Restored."), false);
                 Some(id)
             }
-            UndoStep::Changed(before) => {
+            UndoStep::Changed(mut before) => {
                 let id = before.id;
+                // Reminders that rang since the change don't ring again.
+                before.arm_reminders(&Local, Self::now().timestamp());
+                before.ringing |= self.store.get(id).is_some_and(|i| i.ringing);
                 self.store.replace(before);
                 self.toast(tr!("Undone."), false);
                 Some(id)
@@ -1041,6 +1081,22 @@ impl App {
             }
             Err(err) => Some(err),
         };
+    }
+
+    /// Puts the summon key back to the default (or the fallback, when another
+    /// program holds it). If neither can be claimed, the current key stays.
+    fn reset_summon(&mut self) {
+        let (chosen, previous) = (std::mem::take(&mut self.config.summon), self.summon.clone());
+        self.claim_summon();
+        if self.summon.is_none() {
+            if let (Some(manager), Some((hotkey, keys))) = (&self.hotkeys, previous) {
+                if manager.register(hotkey).is_ok() {
+                    SUMMON_ID.store(hotkey.id(), Ordering::SeqCst);
+                    self.summon = Some((hotkey, keys));
+                    self.config.summon = chosen;
+                }
+            }
+        }
     }
 
     fn register_summon(&mut self, combo: &Combo) -> Result<(), String> {

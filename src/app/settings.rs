@@ -8,7 +8,6 @@
 use super::{on_wayland, App};
 use crate::config::{self, Action, Theme, ACTIONS};
 use crate::i18n::{self, LANGUAGES};
-use crate::model::CATEGORY_COLORS;
 use crate::platform;
 use crate::shortcuts::Combo;
 use crate::{Glyph, NavItem, SettingCard};
@@ -324,12 +323,10 @@ impl App {
                 }
             }
             Entry::NewCategory => {
-                let used: Vec<u8> = self.store.categories().iter().map(|c| c.color).collect();
-                let color = (0..CATEGORY_COLORS).find(|c| !used.contains(c)).unwrap_or(0);
                 SettingCard {
                     kind: 6,
                     description: tr!("Enter adds it, Esc cancels").into(),
-                    tint: i32::from(color),
+                    tint: i32::from(self.store.next_color()),
                     editing: true,
                     ..Default::default()
                 }
@@ -661,8 +658,7 @@ impl App {
             Some(Entry::Language(choice)) => self.set_language(choice),
             Some(Entry::ResetShortcuts) => {
                 self.config.shortcuts.clear();
-                self.config.summon.clear();
-                self.claim_summon();
+                self.reset_summon();
                 match self.summon_problem.clone() {
                     Some(problem) => self.settings.error = Some((Entry::ResetShortcuts, problem)),
                     None => self.settings_toast(tr!("Every shortcut is back to its default."), false),

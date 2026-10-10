@@ -490,7 +490,10 @@ impl App {
             _ => {}
         }
         let Some(action) = action else { return false };
+        let in_text = matches!(context, "edit-title" | "edit-notes" | "edit-date") || context.starts_with("edit-reminder-amount:");
         match action {
+            // In a text field, Ctrl+Delete and Ctrl+Backspace delete a word, as everywhere else.
+            Action::Delete if in_text && matches!(combo.key.as_str(), "Delete" | "Backspace") => return false,
             Action::Schedule | Action::Open => {
                 self.close_editor(false);
             }
@@ -505,10 +508,11 @@ impl App {
                 }
             }
             Action::Delete => {
-                if let Some(session) = self.editor.take() {
-                    let view = session.return_to;
-                    self.delete(session.id);
-                    self.show_list(view);
+                // Save first, so undo brings the note back as it was last typed.
+                if let Some(id) = self.editor.as_ref().map(|e| e.id) {
+                    if self.close_editor(false) {
+                        self.delete(id);
+                    }
                 }
             }
             Action::Undo => return false, // undo typing in the field

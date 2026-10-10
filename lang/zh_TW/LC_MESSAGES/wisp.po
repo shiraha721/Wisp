@@ -434,6 +434,10 @@ msgid "Nothing to undo."
 msgstr "沒有可以復原的操作。"
 
 #: src/app.rs
+msgid "Empty the box first: {} puts the note's text back there."
+msgstr "請先清空輸入框，{} 會把這則筆記的文字放回去。"
+
+#: src/app.rs
 msgid "Unsaved. The text is back in the box."
 msgstr "已取消儲存，文字回到了輸入框。"
 
@@ -835,10 +839,6 @@ msgstr "結束 Wisp"
 msgid "Closes Wisp completely; the hotkey stops working until it starts again"
 msgstr "完全關閉 Wisp；再次啟動前快速鍵無法使用"
 
-#: src/config.rs
-msgid "Settings file has an error ({}); using defaults."
-msgstr "設定檔有錯誤（{}），已改用預設值。"
-
 #: src/dates.rs
 msgid "“next” what? Try “next fri”."
 msgstr "「下」什麼？試試「下週五」。"
@@ -1188,6 +1188,14 @@ msgid "“{}” isn't a time of day. Try 09:00."
 msgstr "「{}」不是時間。試試 09:00。"
 
 #: src/model.rs
+msgid "Couldn't read {} ({}). It was moved to {}."
+msgstr "無法讀取 {}（{}）。它已被移到 {}。"
+
+#: src/model.rs
+msgid "Couldn't read {} ({}), so Wisp won't save over it. Fix or move the file, then restart Wisp."
+msgstr "無法讀取 {}（{}），所以 Wisp 不會覆寫它。請修復或移走這個檔案，然後重新啟動 Wisp。"
+
+#: src/model.rs
 msgid "Starts {} ({})"
 msgstr "開始於 {}（{}）"
 
@@ -1202,14 +1210,6 @@ msgstr "截止於 {}（{}）"
 #: src/model.rs
 msgid "Was due {} ({})"
 msgstr "已於 {} 截止（{}）"
-
-#: src/model.rs
-msgid "Couldn't read {} ({}). It was moved to {}."
-msgstr "無法讀取 {}（{}）。它已被移到 {}。"
-
-#: src/model.rs
-msgid "Couldn't open {}: {}"
-msgstr "無法開啟 {}：{}"
 
 #: src/model.rs
 msgid "Give it a name."

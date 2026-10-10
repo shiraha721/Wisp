@@ -6,7 +6,9 @@ plain UTF-8 JSON, written whole on every change: first to a `.json.tmp` file,
 which then replaces the old one.
 
 Quit Wisp before editing them by hand; a running Wisp would write over your
-changes. Fields Wisp doesn't know are dropped the next time it saves.
+changes. Fields Wisp doesn't know are dropped the next time it saves. A file
+Wisp can't read is moved aside, never overwritten (see
+[Backups](user-guide.md#where-your-notes-are-kept)).
 
 ## notes.json
 

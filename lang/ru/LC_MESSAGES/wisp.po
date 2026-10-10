@@ -436,6 +436,10 @@ msgid "Nothing to undo."
 msgstr "Нечего отменять."
 
 #: src/app.rs
+msgid "Empty the box first: {} puts the note's text back there."
+msgstr "Сначала очистите поле ввода: {} вернёт туда текст заметки."
+
+#: src/app.rs
 msgid "Unsaved. The text is back in the box."
 msgstr "Отменено. Текст снова в поле ввода."
 
@@ -837,10 +841,6 @@ msgstr "Выйти из Wisp"
 msgid "Closes Wisp completely; the hotkey stops working until it starts again"
 msgstr "Полностью закрывает Wisp; сочетание не работает, пока он не запустится снова"
 
-#: src/config.rs
-msgid "Settings file has an error ({}); using defaults."
-msgstr "В файле настроек ошибка ({}); используются значения по умолчанию."
-
 #: src/dates.rs
 msgid "“next” what? Try “next fri”."
 msgstr "«следующий» что? Попробуйте «в следующую пятницу»."
@@ -1192,6 +1192,14 @@ msgid "“{}” isn't a time of day. Try 09:00."
 msgstr "«{}» — не время суток. Попробуйте 09:00."
 
 #: src/model.rs
+msgid "Couldn't read {} ({}). It was moved to {}."
+msgstr "Не удалось прочитать {} ({}). Файл перемещён в {}."
+
+#: src/model.rs
+msgid "Couldn't read {} ({}), so Wisp won't save over it. Fix or move the file, then restart Wisp."
+msgstr "Не удалось прочитать {} ({}), поэтому Wisp не будет его перезаписывать. Исправьте или переместите файл и перезапустите Wisp."
+
+#: src/model.rs
 msgid "Starts {} ({})"
 msgstr "Начало {} ({})"
 
@@ -1206,14 +1214,6 @@ msgstr "Срок {} ({})"
 #: src/model.rs
 msgid "Was due {} ({})"
 msgstr "Срок истёк {} ({})"
-
-#: src/model.rs
-msgid "Couldn't read {} ({}). It was moved to {}."
-msgstr "Не удалось прочитать {} ({}). Файл перемещён в {}."
-
-#: src/model.rs
-msgid "Couldn't open {}: {}"
-msgstr "Не удалось открыть {}: {}"
 
 #: src/model.rs
 msgid "Give it a name."
